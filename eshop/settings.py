@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','django-insecure-rurog5dy1^w#51-g2+=+7g*@3yuzg-3vnnqxhg9_l%djy(_9tc')
 
 STRIPE_PUBLIC_KEY = 'pk_test_51SywoVRujOUNWAGauDehsCr4FRExYpKV593HjW5vaj69yJrYtdIOZMel0GqXA0cmsqMxzOWoYKqCpyapxrS67fVv00OECqi7bT'
-STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY','sk_test_51SywoVRujOUNWAGavBny8GU2O3YPrmNT7eGCkFHEYxl9m93RQuAz6whqwFNdXutWGQB83aPxMGCNhhuaaFrBs9MU00tacSwtFD')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = 'whsec_86c5d7588c6bc0e723dfb473a89d00be588cf2b052ecd2173831cfe5b6f10ff5'  # optional (later)
 
 
