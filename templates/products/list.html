@@ -1,0 +1,23 @@
+<h1>Product List</h1>
+
+{% for product in products %}
+<div style="border:1px solid #ccc; padding:15px; margin-bottom:20px; width:250px;">
+
+    <!-- Product Image -->
+    {% if product.image %}
+        <img src="{{ product.image.url }}" width="200" style="display:block; margin-bottom:10px;">
+    {% endif %}
+
+    <!-- Add to Cart Button (UNDER IMAGE) -->
+    <a href="{% url 'add_to_cart' product.id %}">
+        <button>Add to Cart</button>
+    </a>
+
+    <!-- Product Info -->
+    <h3>{{ product.name }}</h3>
+    <p><strong>Store:</strong> {{ product.store.name }}</p>
+    <p><strong>Category:</strong> {{ product.category.name }}</p>
+    <p>Price: {{ product.price }}</p>
+
+</div>
+{% endfor %}

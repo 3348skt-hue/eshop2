@@ -1,0 +1,41 @@
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="order_id" placeholder="Order ID" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <button type="submit">Lookup Order</button>
+</form>
+
+{% if error %}
+<p style="color:red">{{ error }}</p>
+{% endif %}
+
+{% if order %}
+<h3>Order #{{ order.id }}</h3>
+<p>Email: {{ order.email }}</p>
+
+<table>
+    <tr>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Price</th>
+    </tr>
+
+    {% for item in items %}
+    <tr>
+            <td>
+                {% if item.product %}
+                    {{ item.product.name }}
+                {% else %}
+                    {{ item.product_name }}
+                {% endif %}
+            </td>
+            <td>{{ item.quantity }}</td>
+            <td>€{{ item.price|floatformat:2 }}</td>
+        </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">No items found for this order</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}

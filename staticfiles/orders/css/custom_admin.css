@@ -1,0 +1,19 @@
+/* Hide the gray "1x Product Name" header in TabularInline */
+.tabular .module h3 {
+    display: none !important;
+}
+
+/* Alternative: More specific selector for order items only */
+#orderitem_set-group .tabular .module h3 {
+    display: none !important;
+}
+
+/* Also hide the inline object header row */
+.inline-related h3 {
+    display: none !important;
+}
+
+/* If using newer Django admin, try this */
+.tabular .form-row.has_original h3 {
+    display: none !important;
+}
