@@ -3,6 +3,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.urls import reverse
+from ebaysdk.trading import Connection as Trading
 
 # Create your views here.
 import stripe
@@ -10,6 +11,7 @@ from django.conf import settings
 from django.shortcuts import redirect, render
 from products.models import Product
 from .models import Order, OrderItem
+import pymysql
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -198,21 +200,45 @@ def stripe_webhook(request):
             stripe_payment_intent=session.get("payment_intent")
         )
 
+        # ✅ GET CART FROM METADATA TO RETRIEVE SKUs
+        cart = json.loads(session.get("metadata", {}).get("cart", "{}"))
+
         # ✅ GET ITEMS DIRECTLY FROM STRIPE
         line_items = stripe.checkout.Session.list_line_items(session["id"])
 
         total_amount = 0
+        order_items_data = []
+
         for item in line_items["data"]:
             product_name = item["description"]
             quantity = item["quantity"]
             price = item["amount_total"] / 100
 
+            # Find SKU by matching product name
+            sku = None
+            for product_id, qty in cart.items():
+                try:
+                    product = Product.objects.get(id=product_id)
+                    if product.name == product_name:
+                        sku = product.sku
+                        break
+                except Product.DoesNotExist:
+                    pass
+
             OrderItem.objects.create(
                 order=order,
                 product_name=product_name,
+                sku=sku,
                 quantity=quantity,
                 price=price
             )
+
+            order_items_data.append({
+                'sku': sku,
+                'quantity': quantity,
+                'price': price,
+                'name': product_name
+            })
 
             total_amount += price
 
@@ -220,4 +246,88 @@ def stripe_webhook(request):
         order.total = total_amount
         order.save()
 
+        # ✅ SYNC TO MYSQL DATABASE AND UPDATE EBAY
+        try:
+            sync_order_to_mysql(order, order_items_data, shipping_address, email, full_name, phone)
+        except Exception as e:
+            print(f"MySQL sync error: {e}")
+
     return HttpResponse(status=200)
+
+    def sync_order_to_mysql(order, items, shipping_address, email, full_name, phone):
+        import pymysql
+        from ebaysdk.trading import Connection as Trading
+
+        connection = pymysql.connect(
+            host="sql8.freesqldatabase.com",
+            user="sql8593920",
+            passwd="6tNAYqYpK3",
+            database="sql8593920",
+            autocommit=True,
+            read_timeout=1000
+        )
+        cursor = connection.cursor()
+
+        try:
+            api = Trading(config_file='/home/maksupplies/eshop2/ebay.yaml')
+
+            for item in items:
+                sku = item['sku']
+                quantity = item['quantity']
+                price = item['price']
+                product_name = item['name']
+
+                if not sku:
+                    continue
+
+                # Insert into saleorder table
+                sql = """INSERT INTO saleorder
+                        (userid, name, street1, city, postcode, country, phone, orderid,
+                         total, quantity, time, site, currency, price, title, sku)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+
+                cursor.execute(sql, (
+                    email,
+                    full_name,
+                    shipping_address.get('line1', ''),
+                    shipping_address.get('city', ''),
+                    shipping_address.get('postal_code', ''),
+                    shipping_address.get('country', ''),
+                    phone,
+                    order.order_number,
+                    price,
+                    quantity,
+                    order.created_at.strftime('%Y-%m-%d'),
+                    'eshop',
+                    'EUR',
+                    price / quantity if quantity else price,
+                    product_name,
+                    sku
+                ))
+
+                # Update inventory stock
+                cursor.execute(
+                    "UPDATE inventory SET stock = stock - %s, sale = sale + %s WHERE sku = %s",
+                    (quantity, quantity, sku)
+                )
+
+                # Get updated stock
+                cursor.execute("SELECT stock FROM inventory WHERE sku = %s", (sku,))
+                result = cursor.fetchone()
+                if result:
+                    new_stock = result[0]
+
+                    # Update eBay listings
+                    cursor.execute("SELECT itemid FROM ebaylisting WHERE sku = %s", (sku,))
+                    ebay_items = cursor.fetchall()
+                    for ebay_item in ebay_items:
+                        try:
+                            api.execute('ReviseFixedPriceItem', {
+                                'Item': {'ItemID': ebay_item[0], 'Quantity': new_stock}
+                            })
+                            print(f"eBay stock updated for item {ebay_item[0]}")
+                        except Exception as e:
+                            print(f"eBay update error: {e}")
+
+        finally:
+            connection.close()

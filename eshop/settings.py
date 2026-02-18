@@ -32,7 +32,7 @@ STRIPE_WEBHOOK_SECRET = 'whsec_86c5d7588c6bc0e723dfb473a89d00be588cf2b052ecd2173
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['3348skt-hue.pythonanywhere.com']
+ALLOWED_HOSTS = ['maksupplies.pythonanywhere.com']
 
 
 # Application definition
