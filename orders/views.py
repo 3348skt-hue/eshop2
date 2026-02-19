@@ -3,15 +3,12 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.urls import reverse
-from ebaysdk.trading import Connection as Trading
 
-# Create your views here.
 import stripe
 from django.conf import settings
 from django.shortcuts import redirect, render
 from products.models import Product
 from .models import Order, OrderItem
-import pymysql
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -21,7 +18,6 @@ def create_checkout_session(request):
     if not cart:
         return redirect('cart:cart_detail')
 
-    # Get customer info from POST
     full_name = request.POST.get('full_name')
     email = request.POST.get('email')
     phone = request.POST.get('phone')
@@ -31,9 +27,8 @@ def create_checkout_session(request):
     country = request.POST.get('address_country')
 
     if not full_name or not email or not address_line1 or not city or not postal_code or not country:
-        return redirect('cart:cart_detail')  # validate required fields
+        return redirect('cart:cart_detail')
 
-    # Store in session (so you can save Order in DB later)
     request.session['checkout_info'] = {
         "full_name": full_name,
         "email": email,
@@ -46,7 +41,6 @@ def create_checkout_session(request):
         }
     }
 
-    # Create Stripe line items
     line_items = []
     cart_data = {}
     for product_id, qty in cart.items():
@@ -59,21 +53,17 @@ def create_checkout_session(request):
             },
             "quantity": qty
         })
-        # 👇 Store in cart_data for webhook
         cart_data[product_id] = {
             "name": product.name,
             "quantity": qty,
             "price": float(product.price)}
 
-    # Create Stripe Checkout session
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         mode="payment",
         line_items=line_items,
-        customer_email=email,  # pre-fill Stripe email
-        # shipping_address_collection={"allowed_countries": ["US", "GB", "DE", "FR", "NL", "ES"]},  # optional
+        customer_email=email,
         success_url=request.build_absolute_uri(reverse("orders:order_success")) + "?session_id={CHECKOUT_SESSION_ID}",
-        # ✅ ADD SESSION_ID
         cancel_url=request.build_absolute_uri(reverse("cart:cart_detail")),
         metadata={
             "cart": json.dumps(cart),
@@ -90,29 +80,17 @@ def create_checkout_session(request):
 
 
 def order_success(request):
-    """
-    Display order confirmation with order number
-    """
-    # Get the session_id from URL parameter
     session_id = request.GET.get('session_id')
-
     order = None
 
     if session_id:
         try:
-            # Retrieve the Stripe session
             session = stripe.checkout.Session.retrieve(session_id)
-
-            # Get the payment intent ID
             payment_intent = session.get('payment_intent')
-
-            # Find the order by payment intent
             if payment_intent:
                 try:
                     order = Order.objects.get(stripe_payment_intent=payment_intent)
                 except Order.DoesNotExist:
-                    # Order might not be created yet by webhook
-                    # Wait a moment and try again
                     import time
                     time.sleep(2)
                     try:
@@ -122,13 +100,11 @@ def order_success(request):
         except stripe.error.StripeError:
             pass
 
-    # Clear the cart
     if 'cart' in request.session:
         del request.session['cart']
     if 'checkout_info' in request.session:
         del request.session['checkout_info']
 
-    # ✅ PASS ORDER TO TEMPLATE
     context = {
         'order': order,
         'order_number': order.order_number if order else None,
@@ -145,7 +121,6 @@ def order_lookup(request):
     if request.method == "POST":
         order_id = request.POST.get("order_id")
         email = request.POST.get("email")
-
         try:
             order = Order.objects.get(id=order_id, email=email)
             items = order.items.all()
@@ -165,7 +140,11 @@ def stripe_webhook(request):
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
-    event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except stripe.error.SignatureVerificationError:
+        event = json.loads(payload)
+        event = stripe.util.convert_to_stripe_object(event)
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
@@ -173,7 +152,6 @@ def stripe_webhook(request):
         full_name = session.get("metadata", {}).get("full_name", "Unknown")
         email = session.get("customer_email", "unknown@email.com")
         phone = session.get("metadata", {}).get("phone", "")
-
         shipping_address = {
             "line1": session.get("metadata", {}).get("address_line1"),
             "city": session.get("metadata", {}).get("address_city"),
@@ -181,17 +159,14 @@ def stripe_webhook(request):
             "country": session.get("metadata", {}).get("address_country"),
         }
 
-        # ✅ GENERATE ORDER NUMBER
         import uuid
         from datetime import datetime
-
         date_str = datetime.now().strftime('%Y%m%d')
         unique_id = str(uuid.uuid4().hex)[:5].upper()
         order_number = f"ORD-{date_str}-{unique_id}"
 
-        # ✅ CREATE ORDER WITH ORDER NUMBER
         order = Order.objects.create(
-            order_number=order_number,  # ✅ ADD THIS
+            order_number=order_number,
             full_name=full_name,
             email=email,
             phone=phone,
@@ -200,12 +175,10 @@ def stripe_webhook(request):
             stripe_payment_intent=session.get("payment_intent")
         )
 
-        # ✅ GET CART FROM METADATA TO RETRIEVE SKUs
+        # Get cart from metadata to find SKUs
         cart = json.loads(session.get("metadata", {}).get("cart", "{}"))
 
-        # ✅ GET ITEMS DIRECTLY FROM STRIPE
         line_items = stripe.checkout.Session.list_line_items(session["id"])
-
         total_amount = 0
         order_items_data = []
 
@@ -214,13 +187,16 @@ def stripe_webhook(request):
             quantity = item["quantity"]
             price = item["amount_total"] / 100
 
-            # Find SKU by matching product name
+            # Find SKU and reduce Django stock
             sku = None
             for product_id, qty in cart.items():
                 try:
                     product = Product.objects.get(id=product_id)
                     if product.name == product_name:
                         sku = product.sku
+                        if product.stock >= quantity:
+                            product.stock -= quantity
+                            product.save()
                         break
                 except Product.DoesNotExist:
                     pass
@@ -234,19 +210,18 @@ def stripe_webhook(request):
             )
 
             order_items_data.append({
-                'sku': sku,
-                'quantity': quantity,
-                'price': price,
-                'name': product_name
+                "sku": sku,
+                "quantity": quantity,
+                "price": price,
+                "name": product_name
             })
 
             total_amount += price
 
-        # ✅ UPDATE ORDER TOTAL
         order.total = total_amount
         order.save()
 
-        # ✅ SYNC TO MYSQL DATABASE AND UPDATE EBAY
+        # Sync to MySQL and update eBay
         try:
             sync_order_to_mysql(order, order_items_data, shipping_address, email, full_name, phone)
         except Exception as e:
@@ -254,80 +229,78 @@ def stripe_webhook(request):
 
     return HttpResponse(status=200)
 
-    def sync_order_to_mysql(order, items, shipping_address, email, full_name, phone):
-        import pymysql
-        from ebaysdk.trading import Connection as Trading
 
-        connection = pymysql.connect(
-            host="sql8.freesqldatabase.com",
-            user="sql8593920",
-            passwd="6tNAYqYpK3",
-            database="sql8593920",
-            autocommit=True,
-            read_timeout=1000
-        )
-        cursor = connection.cursor()
+def sync_order_to_mysql(order, items, shipping_address, email, full_name, phone):
+    import pymysql
 
-        try:
-            api = Trading(config_file='/home/maksupplies/eshop2/ebay.yaml')
+    connection = pymysql.connect(
+        host="maksupplies.mysql.pythonanywhere-services.com",
+        user="maksupplies",
+        passwd="DharowalSialkot",
+        database="maksupplies$default",
+        autocommit=True,
+        read_timeout=1000
+    )
+    cursor = connection.cursor()
 
-            for item in items:
-                sku = item['sku']
-                quantity = item['quantity']
-                price = item['price']
-                product_name = item['name']
+    try:
+        for item in items:
+            sku = item['sku']
+            quantity = item['quantity']
+            price = item['price']
+            product_name = item['name']
 
-                if not sku:
-                    continue
+            if not sku:
+                continue
 
-                # Insert into saleorder table
-                sql = """INSERT INTO saleorder
-                        (userid, name, street1, city, postcode, country, phone, orderid,
-                         total, quantity, time, site, currency, price, title, sku)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            # Insert into saleorder
+            sql = """INSERT INTO saleorder
+                (userid, name, street1, city, postcode, country, phone, orderid,
+                 total, quantity, time, site, currency, price, title, sku)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
 
-                cursor.execute(sql, (
-                    email,
-                    full_name,
-                    shipping_address.get('line1', ''),
-                    shipping_address.get('city', ''),
-                    shipping_address.get('postal_code', ''),
-                    shipping_address.get('country', ''),
-                    phone,
-                    order.order_number,
-                    price,
-                    quantity,
-                    order.created_at.strftime('%Y-%m-%d'),
-                    'eshop',
-                    'EUR',
-                    price / quantity if quantity else price,
-                    product_name,
-                    sku
-                ))
+            cursor.execute(sql, (
+                email,
+                full_name,
+                shipping_address.get('line1', ''),
+                shipping_address.get('city', ''),
+                shipping_address.get('postal_code', ''),
+                shipping_address.get('country', ''),
+                phone,
+                order.order_number,
+                price,
+                quantity,
+                order.created_at.strftime('%Y-%m-%d'),
+                'eshop',
+                'EUR',
+                price / quantity if quantity else price,
+                product_name,
+                sku
+            ))
 
-                # Update inventory stock
-                cursor.execute(
-                    "UPDATE inventory SET stock = stock - %s, sale = sale + %s WHERE sku = %s",
-                    (quantity, quantity, sku)
-                )
+            # Update MySQL inventory stock
+            cursor.execute(
+                "UPDATE inventory SET stock = stock - %s, sale = sale + %s WHERE sku = %s",
+                (quantity, quantity, sku)
+            )
 
-                # Get updated stock
-                cursor.execute("SELECT stock FROM inventory WHERE sku = %s", (sku,))
-                result = cursor.fetchone()
-                if result:
-                    new_stock = result[0]
-
-                    # Update eBay listings
-                    cursor.execute("SELECT itemid FROM ebaylisting WHERE sku = %s", (sku,))
-                    ebay_items = cursor.fetchall()
-                    for ebay_item in ebay_items:
-                        try:
-                            api.execute('ReviseFixedPriceItem', {
-                                'Item': {'ItemID': ebay_item[0], 'Quantity': new_stock}
-                            })
-                            print(f"eBay stock updated for item {ebay_item[0]}")
-                        except Exception as e:
-                            print(f"eBay update error: {e}")
-
-        finally:
-            connection.close()
+            # Get updated stock level
+            cursor.execute("SELECT stock FROM inventory WHERE sku = %s", (sku,))
+            result = cursor.fetchone()
+            if result:
+                new_stock = result[0]
+                # Update eBay listings
+                cursor.execute("SELECT itemid FROM ebaylisting WHERE sku = %s", (sku,))
+                ebay_items = cursor.fetchall()
+                for ebay_item in ebay_items:
+                    try:
+                        from ebaysdk.trading import Connection as Trading
+                        api = Trading(config_file='/home/maksupplies/eshop2/ebay.yaml')
+                        api.execute('ReviseFixedPriceItem', {
+                            'Item': {'ItemID': ebay_item[0], 'Quantity': new_stock}
+                        })
+                        print(f"eBay stock updated for item {ebay_item[0]}")
+                    except Exception as e:
+                        print(f"eBay update error: {e}")
+    finally:
+        connection.close()
