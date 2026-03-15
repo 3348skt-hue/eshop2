@@ -1,0 +1,34 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h2 class="mb-4">Manual eBay Order Import</h2>
+
+<div class="card p-4 mb-4" style="max-width:500px">
+    <p class="text-muted">This will fetch new eBay orders and import them into the dashboard. Stock will be updated automatically on inventory and eBay listings.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-primary w-100" id="importBtn" onclick="this.disabled=true; this.textContent='Importing... please wait'; this.form.submit()">
+            🔄 Import eBay Orders Now
+        </button>
+    </form>
+    <small class="text-muted mt-2 d-block">⏱ This may take up to 60 seconds. Orders from last 2 days will be checked.</small>
+</div>
+
+{% if message %}
+<div class="alert {% if 'Error' in message or 'timed' in message %}alert-danger{% else %}alert-success{% endif %}">
+    {{ message }}
+</div>
+{% endif %}
+
+{% if results %}
+<div class="card p-3" style="max-width:700px">
+    <h6>Import Log:</h6>
+    <div style="max-height:400px; overflow-y:auto; font-family:monospace; font-size:13px">
+    {% for r in results %}
+    <div class="text-{{ r.type }} py-1 border-bottom">{{ r.line }}</div>
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<a href="/dashboard/orders/" class="btn btn-secondary mt-3">← Back to Orders</a>
+{% endblock %}

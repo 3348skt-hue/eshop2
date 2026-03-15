@@ -1,0 +1,45 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/dashboard/purchase-orders-full/" class="btn btn-outline-secondary">← Back</a>
+    <h2 class="mb-0">Edit Purchase Order #{{ po.0 }}</h2>
+</div>
+
+<div class="card border-0 shadow-sm p-4" style="max-width:550px">
+    <div class="alert alert-light border mb-3">
+        <strong>SKU:</strong> {{ po.1 }} &nbsp;|&nbsp; <strong>Item:</strong> {{ po.5 }}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-6">
+                <label class="form-label fw-bold">Quantity</label>
+                <input type="number" class="form-control" name="qty" value="{{ po.2 }}" required>
+            </div>
+            <div class="col-6">
+                <label class="form-label fw-bold">Purchase Order #</label>
+                <input type="number" class="form-control" name="porder" value="{{ po.3 }}">
+            </div>
+            <div class="col-6">
+                <label class="form-label fw-bold">Price (PKR)</label>
+                <input type="number" step="0.01" class="form-control" name="price" value="{{ po.4 }}" required>
+            </div>
+            <div class="col-6">
+                <label class="form-label fw-bold">Size</label>
+                <input type="text" class="form-control" name="size" value="{{ po.6 }}">
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-bold">Maker</label>
+                <input type="text" class="form-control" name="maker" value="{{ po.7 }}" list="makerList">
+                <datalist id="makerList">
+                    {% for m in makers %}<option value="{{ m }}">{% endfor %}
+                </datalist>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-4">💾 Save Changes</button>
+            <a href="/dashboard/purchase-orders-full/" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

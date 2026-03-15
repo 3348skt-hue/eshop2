@@ -31,23 +31,40 @@ def home(request):
             Q(description__icontains=query)
         )
 
+    featured_products = Product.objects.filter(stock__gt=0).order_by('?')[:6]
+
     return render(request, 'products/home.html', {
         'products': products,
+        'featured_products': featured_products,
         'categories': categories,
         'selected_category': category_id,
         'query': query,
     })
 
 def product_detail(request, id):
+    from orders.models import OrderItem
+    from django.db.models import Sum
+    import pymysql, os
     product = get_object_or_404(Product, id=id)
     categories = Category.objects.all()
-
-    return render(request, 'products/product_detail.html', {
-        'product': product,
-        'categories': categories,
+    # Django orders
+    django_sold = OrderItem.objects.filter(sku=product.sku).aggregate(total=Sum("quantity"))["total"] or 0
+    # MySQL orders (eBay + all)
+    mysql_sold = 0
+    try:
+        conn = pymysql.connect(host="maksupplies.mysql.pythonanywhere-services.com", user="maksupplies", passwd=os.environ.get("DB_PASS",""), database="maksupplies$default", autocommit=True, read_timeout=3)
+        cursor = conn.cursor()
+        cursor.execute("SELECT SUM(quantity) FROM saleorder WHERE sku=%s", (product.sku,))
+        result = cursor.fetchone()
+        mysql_sold = int(result[0]) if result and result[0] else 0
+        conn.close()
+    except: pass
+    units_sold = max(django_sold, mysql_sold)
+    return render(request, "products/product_detail.html", {
+        "product": product,
+        "categories": categories,
+        "units_sold": units_sold,
     })
-
-
 from django.shortcuts import render
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -113,6 +130,8 @@ def products_page(request):
     """
     Products page view - shows all products with filtering, search, and pagination
     """
+    from orders.models import OrderItem
+    from django.db.models import Sum, OuterRef, Subquery, IntegerField
     # Start with all products
     products = Product.objects.all()
 
@@ -151,6 +170,7 @@ def products_page(request):
             selected_subcategory = int(subcategory_id)
             subcategory_obj = SubCategory.objects.get(id=subcategory_id)
             selected_category_name = subcategory_obj.name
+            selected_category = subcategory_obj.category.id
         except (ValueError, SubCategory.DoesNotExist):
             pass
 
@@ -173,6 +193,32 @@ def products_page(request):
     # Get total count before pagination
     total_products = products.count()
 
+    # Annotate units sold per product from Django orders
+    from django.db.models import Sum, Value
+    from django.db.models.functions import Coalesce
+    sold_subquery = OrderItem.objects.filter(
+        sku=OuterRef('sku')
+    ).values('sku').annotate(total=Sum('quantity')).values('total')
+    products = products.annotate(units_sold=Coalesce(Subquery(sold_subquery), Value(0)))
+
+    # Get MySQL sales (eBay + all channels)
+    import pymysql, os
+    mysql_sales = {}
+    try:
+        conn = pymysql.connect(host="maksupplies.mysql.pythonanywhere-services.com", user="maksupplies", passwd=os.environ.get("DB_PASS",""), database="maksupplies$default", autocommit=True, read_timeout=3)
+        cursor = conn.cursor()
+        cursor.execute("SELECT sku, SUM(quantity) FROM saleorder GROUP BY sku")
+        for row in cursor.fetchall():
+            mysql_sales[str(row[0])] = int(row[1]) if row[1] else 0
+        conn.close()
+    except: pass
+
+    # Merge MySQL sales into products
+    products_list = list(products)
+    for p in products_list:
+        mysql_qty = mysql_sales.get(str(p.sku), 0)
+        p.units_sold = max(p.units_sold, mysql_qty)
+
     # Pagination - 24 products per page
     paginator = Paginator(products, 24)  # You can change to 36, 48, etc.
     page_number = request.GET.get('page', 1)
@@ -180,6 +226,11 @@ def products_page(request):
 
     # Get all categories for sidebar
     categories = Category.objects.prefetch_related('subcategories').all()
+
+    # Re-paginate with merged data
+    from django.core.paginator import Paginator as Pag2
+    paginator2 = Pag2(products_list, 24)
+    page_obj = paginator2.get_page(page_number)
 
     context = {
         'products': page_obj,
@@ -196,3 +247,60 @@ def products_page(request):
     }
 
     return render(request, 'products/products.html', context)
+
+from django.core.mail import send_mail
+from django.contrib import messages
+
+from django_ratelimit.decorators import ratelimit
+
+@ratelimit(key="ip", rate="5/m", method="POST", block=True)
+def contact_page(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()[:100]
+        email = request.POST.get('email', '').strip()[:100]
+        phone = request.POST.get('phone', '').strip()[:20]
+        subject = request.POST.get('subject', '').strip()[:200]
+        message = request.POST.get('message', '').strip()[:2000]
+        if not all([name, email, subject, message]):
+            messages.error(request, 'Please fill in all required fields.')
+            return render(request, 'products/contact.html')
+
+        try:
+            send_mail(
+                subject=f'MAK Supplies Contact: {subject}',
+                message=f'''New contact form submission:
+
+Name: {name}
+Email: {email}
+Phone: {phone}
+Subject: {subject}
+
+Message:
+{message}''',
+                from_email='3348skt@gmail.com',
+                recipient_list=['3348skt@gmail.com'],
+                fail_silently=False,
+            )
+            messages.success(request, 'success')
+        except Exception as e:
+            messages.error(request, f'error: {e}')
+
+    return render(request, 'products/contact.html')
+
+
+def shipping_page(request):
+    from dashboard.models import ShippingRate
+    rates = ShippingRate.objects.filter(is_active=True).order_by('country')
+    free_countries = rates.filter(has_free_postage=True)
+    tracked_only = rates.filter(has_free_postage=False)
+    return render(request, "products/shipping.html", {
+        'rates': rates,
+        'free_countries': free_countries,
+        'tracked_only': tracked_only,
+    })
+
+def returns_page(request):
+    return render(request, "products/returns.html")
+
+
+

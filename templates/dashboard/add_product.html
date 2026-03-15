@@ -1,0 +1,117 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h2 class="mb-4">Add New Product</h2>
+
+{% if message %}
+<div class="alert {% if 'already' in message %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>
+{% endif %}
+
+<!-- Step 1: Fetch SKU info -->
+<div class="card p-4 mb-4" style="max-width:600px">
+    <h5>Step 1 — Enter SKU</h5>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="fetch">
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control" name="sku" placeholder="Enter SKU e.g. 13530" value="{{ fetched.sku }}" required>
+            <button class="btn btn-outline-primary">Check</button>
+        </div>
+    </form>
+    {% if fetched %}
+    <div class="mt-3">
+        <p>eBay Listings found: <strong>{{ fetched.listing_count }}</strong></p>
+        <p>Title from eBay: <strong>{{ fetched.title }}</strong></p>
+        {% if fetched.exists %}
+        <div class="alert alert-warning">⚠️ This SKU already exists in inventory!</div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Step 2: Fill in details -->
+{% if fetched and not fetched.exists %}
+<div class="card p-4" style="max-width:600px">
+    <h5>Step 2 — Fill in Details</h5>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="sku" value="{{ fetched.sku }}">
+        <div class="row g-3">
+            <div class="col-12">
+                <label>Title</label>
+                <input type="text" class="form-control" name="title" value="{{ fetched.title }}" required>
+            </div>
+            <div class="col-6">
+                <label>Stock</label>
+                <input type="number" class="form-control" name="stock" required>
+            </div>
+            <div class="col-6">
+                <label>Opening Stock</label>
+                <input type="number" class="form-control" name="opening" required>
+            </div>
+            <div class="col-6">
+                <label>Reorder Level</label>
+                <input type="number" class="form-control" name="reorder">
+            </div>
+            <div class="col-6">
+                <label>Price (€)</label>
+                <input type="number" step="0.01" class="form-control" name="price">
+            </div>
+            <div class="col-6">
+                <label>Weight (g)</label>
+                <input type="number" class="form-control" name="weight">
+            </div>
+            <div class="col-6">
+                <label>Postage (€)</label>
+                <input type="number" step="0.01" class="form-control" name="postage">
+            </div>
+            <div class="col-12">
+                <label>Maker</label>
+                <select class="form-select" name="maker">
+                    <option value="">-- Select Maker --</option>
+                    {% for m in makers %}
+                    <option value="{{ m.1 }}">{{ m.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <label>Product Photo</label>
+                <div class="mb-2">
+                    <input type="file" class="form-control" name="photo_file" accept="image/*" onchange="previewImg(this)">
+                    <small class="text-muted">Upload from computer</small>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" name="photo" placeholder="Or paste photo URL: https://...">
+                    <small class="text-muted">Or paste image URL</small>
+                </div>
+                <img id="imgPreview" src="" style="max-height:100px; display:none; border-radius:6px;" class="mt-1">
+            </div>
+            <div class="col-6">
+                <label>eBay Category ID</label>
+                <input type="text" class="form-control" name="catid" placeholder="e.g. 185166">
+            </div>
+            <div class="col-6">
+                <label>Store Category</label>
+                <input type="text" class="form-control" name="storecat" placeholder="e.g. Medical Shop/Surgical...">
+            </div>
+        </div>
+        <button class="btn btn-success w-100 mt-3">Add Product</button>
+    </form>
+</div>
+{% endif %}
+
+<a href="/dashboard/inventory/" class="btn btn-secondary mt-3">← Back to Inventory</a>
+<script>
+function previewImg(input) {
+    const preview = document.getElementById('imgPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

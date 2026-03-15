@@ -1,3 +1,4 @@
+{% load image_tags %}
 <h1>Product List</h1>
 
 {% for product in products %}
@@ -5,7 +6,7 @@
 
     <!-- Product Image -->
     {% if product.image %}
-        <img src="{{ product.image.url }}" width="200" style="display:block; margin-bottom:10px;">
+        <img src="{{ product.image|image_src }}" width="200" style="display:block; margin-bottom:10px;">
     {% endif %}
 
     <!-- Add to Cart Button (UNDER IMAGE) -->

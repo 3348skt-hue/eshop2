@@ -1,686 +1,499 @@
+{% load image_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart - MAK Supplies</title>
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
         :root {
-            --primary-color: #800020;
-            --secondary-color: #a0002a;
-            --accent-color: #f4a261;
+            --primary: #800020;
+            --secondary: #a0002a;
+            --accent: #f4a261;
             --dark: #1a1a1a;
-            --light-bg: #f8f9fa;
-            --text-dark: #2c3e50;
-            --border-color: #e8e8e8;
+            --light: #f8f9fa;
+            --border: #e8e8e8;
             --success: #27ae60;
             --danger: #e74c3c;
+            --text: #2c3e50;
         }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'DM Sans',sans-serif; background:#f0f2f5; color:var(--text); }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        .navbar-custom { background:linear-gradient(135deg,var(--primary),var(--secondary)); padding:0.75rem 0; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+        .navbar-brand { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; color:white !important; }
+        .nav-link-white { color:rgba(255,255,255,0.85); text-decoration:none; font-size:0.9rem; font-weight:500; display:flex; align-items:center; gap:6px; }
+        .nav-link-white:hover { color:white; }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-            color: var(--text-dark);
-            min-height: 100vh;
-        }
+        .page-wrap { padding:24px 0 60px; }
 
-        /* NAVBAR */
-        .navbar-custom {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            padding: 1rem 0;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 0;
-        }
+        .card { border:none; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.06); }
 
-        .navbar-brand {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white !important;
-            letter-spacing: 1px;
-        }
+        .cart-header-row { padding:14px 20px; background:#f8f9fa; border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; font-size:0.82rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.5px; }
 
-        .continue-shopping-btn {
-            background: white;
-            color: var(--primary-color);
-            padding: 10px 25px;
-            border-radius: 50px;
-            border: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .cart-item { padding:16px 20px; border-bottom:1px solid #f5f5f5; transition:background 0.2s; }
+        .cart-item:hover { background:#fafbfc; }
+        .cart-item:last-child { border-bottom:none; }
 
-        .continue-shopping-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            color: var(--primary-color);
-        }
+        .product-img { width:64px; height:64px; object-fit:cover; border-radius:8px; background:#f5f5f5; flex-shrink:0; cursor:zoom-in; }
+        .product-img-placeholder { width:64px; height:64px; border-radius:8px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:1.5rem; flex-shrink:0; }
 
-        /* HEADER SECTION */
-        .cart-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            padding: 60px 0 80px;
-            position: relative;
-            overflow: hidden;
-        }
+        .product-name { font-size:0.92rem; font-weight:600; color:var(--dark); line-height:1.4; margin-bottom:3px; }
+        .product-sku { font-size:0.78rem; color:#aaa; }
 
-        .cart-header::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 100px;
-            background: linear-gradient(to bottom, transparent, #f5f7fa);
-        }
+        .qty-wrap { display:flex; align-items:center; gap:8px; background:#f5f5f5; padding:5px 10px; border-radius:50px; width:fit-content; }
+        .qty-btn { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--border); background:white; color:var(--text); font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; padding:0; line-height:1; }
+        .qty-btn:hover { background:var(--primary); border-color:var(--primary); color:white; }
+        .qty-num { font-weight:700; font-size:0.9rem; min-width:20px; text-align:center; color:var(--dark); }
 
-        .cart-header-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            color: white;
-        }
+        .price { font-weight:700; color:var(--primary); font-size:1rem; }
+        .subtotal { font-weight:700; color:var(--dark); font-size:1rem; }
 
-        .cart-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            animation: fadeInDown 0.6s ease;
-        }
+        .remove-btn { background:none; border:none; color:#ccc; cursor:pointer; padding:4px 8px; border-radius:6px; transition:all 0.2s; font-size:1rem; }
+        .remove-btn:hover { background:#fee; color:var(--danger); }
 
-        .cart-subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            animation: fadeInUp 0.8s ease;
-        }
+        .summary-card { border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.06); background:white; padding:22px; position:sticky; top:20px; }
+        .summary-title { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--dark); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+        .summary-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:0.9rem; color:#666; }
+        .summary-total { display:flex; justify-content:space-between; align-items:center; padding:14px 0 0; margin-top:8px; border-top:2px solid var(--border); font-size:1.1rem; font-weight:700; color:var(--dark); }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        .form-section { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.06); padding:24px; margin-top:16px; }
+        .form-section-title { font-size:1rem; font-weight:700; color:var(--dark); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+        .form-section-title i { color:var(--primary); }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        .field-label { font-size:0.82rem; font-weight:600; color:#666; margin-bottom:5px; display:block; }
+        .field-input { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-size:0.9rem; font-family:'DM Sans',sans-serif; background:#fafbfc; transition:all 0.2s; }
+        .field-input:focus { outline:none; border-color:var(--primary); background:white; box-shadow:0 0 0 3px rgba(128,0,32,0.08); }
 
-        /* MAIN CONTAINER */
-        .cart-container {
-            margin-top: -50px;
-            position: relative;
-            z-index: 2;
-            padding-bottom: 80px;
-        }
+        .delivery-option { padding:12px 16px; border-radius:10px; border:1.5px solid var(--border); background:#fafbfc; cursor:pointer; transition:all 0.2s; display:flex; flex-direction:column; gap:4px; }
+        .delivery-option.active { border-color:var(--primary); background:rgba(128,0,32,0.04); }
+        .delivery-label { font-weight:600; font-size:0.9rem; color:var(--dark); }
+        .delivery-desc { font-size:0.78rem; color:#999; margin-top:2px; }
+        .delivery-price { font-weight:700; font-size:0.95rem; color:var(--primary); margin-top:4px; }
 
-        /* CART ITEMS CARD */
-        .cart-items-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-            overflow: hidden;
-            margin-bottom: 30px;
-            animation: slideUp 0.5s ease;
-        }
+        .checkout-btn { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; border:none; padding:14px; border-radius:10px; font-size:1rem; font-weight:700; width:100%; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px; }
+        .checkout-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(128,0,32,0.25); }
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        .security-note { display:flex; align-items:center; gap:8px; padding:10px 14px; background:#e8f5e9; border-radius:8px; margin-top:12px; font-size:0.82rem; color:var(--success); }
 
-        .cart-table-header {
-            background: linear-gradient(135deg, var(--light-bg) 0%, #e8ecf1 100%);
-            padding: 20px 30px;
-            font-weight: 600;
-            color: var(--dark);
-            border-bottom: 2px solid var(--border-color);
-        }
+        .empty-wrap { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.06); padding:60px 20px; text-align:center; }
+        .empty-wrap i { font-size:3.5rem; color:#ddd; margin-bottom:16px; display:block; }
+        .empty-wrap h3 { font-family:'Playfair Display',serif; font-size:1.6rem; color:var(--dark); margin-bottom:8px; }
+        .empty-wrap p { color:#888; margin-bottom:20px; }
+        .shop-btn { background:var(--primary); color:white; padding:12px 30px; border-radius:50px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:8px; transition:all 0.3s; }
+        .shop-btn:hover { background:var(--secondary); color:white; transform:translateY(-2px); }
 
-        .cart-item {
-            padding: 30px;
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .cart-item:hover {
-            background: #fafbfc;
-        }
-
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-
-        .product-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .product-image {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 10px;
-            background: var(--light-bg);
-        }
-
-        .product-details h5 {
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 5px;
-        }
-
-        .product-sku {
-            font-size: 0.9rem;
-            color: #888;
-        }
-
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--light-bg);
-            padding: 8px 16px;
-            border-radius: 50px;
-            width: fit-content;
-        }
-
-        .qty-btn {
-            background: white;
-            border: 2px solid var(--border-color);
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 600;
-        }
-
-        .qty-btn:hover {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .qty-number {
-            font-weight: 600;
-            font-size: 1.1rem;
-            min-width: 30px;
-            text-align: center;
-        }
-
-        .price-tag {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--success);
-        }
-
-        .remove-btn {
-            background: #fee;
-            color: var(--danger);
-            border: 2px solid var(--danger);
-            padding: 8px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .remove-btn:hover {
-            background: var(--danger);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        /* SUMMARY SECTION */
-        .order-summary {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-            padding: 30px;
-            position: sticky;
-            top: 20px;
-            animation: slideUp 0.7s ease;
-        }
-
-        .summary-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            margin-bottom: 25px;
-            color: var(--dark);
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 15px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            font-size: 1rem;
-        }
-
-        .summary-total {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px 0;
-            margin-top: 15px;
-            border-top: 2px solid var(--border-color);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        /* CHECKOUT FORM */
-        .checkout-section {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-            padding: 40px;
-            margin-top: 30px;
-            animation: slideUp 0.9s ease;
-        }
-
-        .checkout-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .form-control-custom {
-            width: 100%;
-            padding: 14px 18px;
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: var(--light-bg);
-        }
-
-        .form-control-custom:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(128, 0, 32, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .checkout-btn {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            border: none;
-            padding: 18px 40px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .checkout-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(128, 0, 32, 0.3);
-        }
-
-        .checkout-btn i {
-            font-size: 1.2rem;
-        }
-
-        /* EMPTY CART */
-        .empty-cart {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-            padding: 80px 40px;
-            text-align: center;
-            animation: slideUp 0.5s ease;
-        }
-
-        .empty-cart i {
-            font-size: 5rem;
-            color: #ddd;
-            margin-bottom: 25px;
-        }
-
-        .empty-cart h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
-            color: var(--dark);
-            margin-bottom: 15px;
-        }
-
-        .empty-cart p {
-            color: #888;
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-        }
-
-        .shop-now-btn {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .shop-now-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(128, 0, 32, 0.3);
-            color: white;
-        }
-
-        /* SECURITY BADGE */
-        .security-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            background: #e8f5e9;
-            border-radius: 10px;
-            margin-top: 20px;
-            color: var(--success);
-            font-size: 0.95rem;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .cart-title {
-                font-size: 2rem;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .cart-item {
-                padding: 20px;
-            }
-
-            .product-info {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .order-summary {
-                position: relative;
-                top: 0;
-            }
+        @media(max-width:768px) {
+            .cart-header-row { display:none; }
+            .cart-item { padding:14px 16px; }
+            .summary-card { position:relative; top:0; margin-top:16px; }
         }
     </style>
 </head>
-
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar-custom">
     <div class="container">
         <div class="d-flex align-items-center justify-content-between w-100">
             <a class="navbar-brand" href="/">MAK Supplies</a>
-            <a href="/" class="continue-shopping-btn">
-                <i class="fas fa-arrow-left"></i>
-                Continue Shopping
-            </a>
+            <div class="d-flex align-items-center gap-4">
+                <a href="/" class="nav-link-white"><i class="fas fa-home"></i> Home</a>
+                <a href="/products/" class="nav-link-white"><i class="fas fa-arrow-left"></i> Continue Shopping</a>
+            </div>
         </div>
     </div>
 </nav>
 
-<!-- HEADER -->
-<section class="cart-header">
-    <div class="container">
-        <div class="cart-header-content">
-            <h1 class="cart-title">Shopping Cart</h1>
-            <p class="cart-subtitle">Review your items and complete your purchase</p>
-        </div>
-    </div>
-</section>
+<div id="cartToast" style="display:none; position:fixed; bottom:24px; right:24px; background:#27ae60; color:white; padding:12px 20px; border-radius:10px; font-weight:600; font-size:0.9rem; z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,0.2);"></div>
 
-<!-- MAIN CONTENT -->
-<div class="cart-container">
+<div class="page-wrap">
     <div class="container">
 
         {% if products %}
-        <div class="row">
-            <!-- CART ITEMS -->
+        <div class="row g-3">
+
+            <!-- LEFT: Cart Items + Form -->
             <div class="col-lg-8">
-                <div class="cart-items-card">
-                    <div class="cart-table-header">
-                        <div class="row align-items-center">
+
+                <!-- Cart Items -->
+                <div class="card">
+                    <div class="cart-header-row">
+                        <div class="row">
                             <div class="col-5">Product</div>
                             <div class="col-2 text-center">Price</div>
-                            <div class="col-2 text-center">Quantity</div>
+                            <div class="col-3 text-center">Quantity</div>
                             <div class="col-2 text-center">Subtotal</div>
-                            <div class="col-1"></div>
                         </div>
                     </div>
 
                     {% for product in products %}
-                    <div class="cart-item">
-                        <div class="row align-items-center">
-                            <div class="col-lg-5">
-                                <div class="product-info">
-                                    <div class="product-image">
-                                        {% if product.image %}
-                                        <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
-                                        {% endif %}
-                                    </div>
-                                    <div class="product-details">
-                                        <h5>{{ product.name }}</h5>
-                                        <p class="product-sku">SKU: {{ product.sku }}</p>
+                    <div class="cart-item" id="cart-row-{{ product.id }}">
+                        <div class="row align-items-center g-2">
+                            <div class="col-5">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if product.image %}
+                                    <img src="{{ product.image|image_src }}" class="product-img" alt="{{ product.name }}" onclick="openLightbox('{{ product.image|image_src }}','{{ product.name }}')">
+                                    {% else %}
+                                    <div class="product-img-placeholder"><i class="fas fa-image"></i></div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="product-name">{{ product.name }}</div>
+                                        <div class="product-sku">SKU: {{ product.sku }}</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-2 text-center">
-                                <span class="price-tag">€{{ product.price }}</span>
+                            <div class="col-2 text-center">
+                                <span class="price">€{{ product.price }}</span>
                             </div>
-                            <div class="col-lg-2 text-center">
-                                <div class="quantity-controls mx-auto">
-                                    <a href="/cart/decrease/{{ product.id }}/" class="qty-btn">−</a>
-                                    <span class="qty-number">{{ product.quantity }}</span>
-                                    <a href="/cart/increase/{{ product.id }}/" class="qty-btn">+</a>
+                            <div class="col-3 text-center">
+                                <div class="qty-wrap mx-auto">
+                                    <button class="qty-btn" onclick="cartUpdate({{ product.id }},'decrease',this)">−</button>
+                                    <span class="qty-num" id="qty-{{ product.id }}">{{ product.quantity }}</span>
+                                    <button class="qty-btn" onclick="cartUpdate({{ product.id }},'increase',this,{{ product.stock }})">+</button>
                                 </div>
                             </div>
-                            <div class="col-lg-2 text-center">
-                                <span class="price-tag">€{{ product.subtotal }}</span>
-                            </div>
-                            <div class="col-lg-1 text-center">
-                                <a href="/cart/remove/{{ product.id }}/" class="remove-btn" title="Remove">
-                                    <i class="fas fa-trash"></i>
-                                </a>
+                            <div class="col-2 text-center d-flex align-items-center justify-content-between">
+                                <span class="subtotal" id="sub-{{ product.id }}">€{{ product.subtotal }}</span>
+                                <a href="/cart/remove/{{ product.id }}/" class="remove-btn" title="Remove"><i class="fas fa-times"></i></a>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
 
-                <!-- CHECKOUT FORM -->
-                <div class="checkout-section">
-                    <h3 class="checkout-title">
-                        <i class="fas fa-shipping-fast"></i>
-                        Shipping Information
-                    </h3>
-
+                <!-- Shipping Form -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-shipping-fast"></i> Shipping Information</div>
                     <form action="{% url 'orders:stripe_checkout' %}" method="POST">
                         {% csrf_token %}
+                        <input type="hidden" name="tracked_rate" id="trackedRateField" value="15.00">
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Full Name *</label>
-                                <input type="text" name="full_name" class="form-control-custom" placeholder="John Doe" required>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="field-label">Full Name *</label>
+                                <input type="text" name="full_name" class="field-input" placeholder="John Doe" required>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Email Address *</label>
-                                <input type="email" name="email" class="form-control-custom" placeholder="john@example.com" required>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Phone Number</label>
-                            <input type="text" name="phone" class="form-control-custom" placeholder="+353 1 234 5678">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Street Address *</label>
-                            <input type="text" name="address_line1" class="form-control-custom" placeholder="123 Main Street" required>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">City *</label>
-                                <input type="text" name="address_city" class="form-control-custom" placeholder="Dublin" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Postal Code *</label>
-                                <input type="text" name="address_postal_code" class="form-control-custom" placeholder="D01 ABC" required>
+                            <div class="col-md-6">
+                                <label class="field-label">Email Address *</label>
+                                <input type="email" name="email" class="field-input" placeholder="john@example.com" required>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Country *</label>
-                            <input type="text" name="address_country" class="form-control-custom" placeholder="Ireland" required>
+                        <div class="mb-3">
+                            <label class="field-label">Phone Number</label>
+                            <div class="d-flex gap-2">
+                                <select id="phoneCode" class="field-input" style="width:130px; min-width:130px;">
+                                    <option value="+353">🇮🇪 +353</option>
+                                    <option value="+93">🇦🇫 +93</option>
+                                    <option value="+61">🇦🇺 +61</option>
+                                    <option value="+43">🇦🇹 +43</option>
+                                    <option value="+32">🇧🇪 +32</option>
+                                    <option value="+55">🇧🇷 +55</option>
+                                    <option value="+1">🇨🇦 +1</option>
+                                    <option value="+86">🇨🇳 +86</option>
+                                    <option value="+45">🇩🇰 +45</option>
+                                    <option value="+20">🇪🇬 +20</option>
+                                    <option value="+358">🇫🇮 +358</option>
+                                    <option value="+33">🇫🇷 +33</option>
+                                    <option value="+49">🇩🇪 +49</option>
+                                    <option value="+30">🇬🇷 +30</option>
+                                    <option value="+36">🇭🇺 +36</option>
+                                    <option value="+91">🇮🇳 +91</option>
+                                    <option value="+62">🇮🇩 +62</option>
+                                    <option value="+98">🇮🇷 +98</option>
+                                    <option value="+964">🇮🇶 +964</option>
+                                    <option value="+353">🇮🇪 +353 Ireland</option>
+                                    <option value="+972">🇮🇱 +972</option>
+                                    <option value="+39">🇮🇹 +39</option>
+                                    <option value="+81">🇯🇵 +81</option>
+                                    <option value="+962">🇯🇴 +962</option>
+                                    <option value="+965">🇰🇼 +965</option>
+                                    <option value="+60">🇲🇾 +60</option>
+                                    <option value="+52">🇲🇽 +52</option>
+                                    <option value="+31">🇳🇱 +31</option>
+                                    <option value="+64">🇳🇿 +64</option>
+                                    <option value="+234">🇳🇬 +234</option>
+                                    <option value="+47">🇳🇴 +47</option>
+                                    <option value="+968">🇴🇲 +968</option>
+                                    <option value="+92">🇵🇰 +92</option>
+                                    <option value="+48">🇵🇱 +48</option>
+                                    <option value="+351">🇵🇹 +351</option>
+                                    <option value="+974">🇶🇦 +974</option>
+                                    <option value="+40">🇷🇴 +40</option>
+                                    <option value="+7">🇷🇺 +7</option>
+                                    <option value="+966">🇸🇦 +966</option>
+                                    <option value="+65">🇸🇬 +65</option>
+                                    <option value="+27">🇿🇦 +27</option>
+                                    <option value="+82">🇰🇷 +82</option>
+                                    <option value="+34">🇪🇸 +34</option>
+                                    <option value="+94">🇱🇰 +94</option>
+                                    <option value="+46">🇸🇪 +46</option>
+                                    <option value="+41">🇨🇭 +41</option>
+                                    <option value="+66">🇹🇭 +66</option>
+                                    <option value="+90">🇹🇷 +90</option>
+                                    <option value="+380">🇺🇦 +380</option>
+                                    <option value="+971">🇦🇪 +971</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+84">🇻🇳 +84</option>
+                                </select>
+                                <input type="text" id="phoneNumber" class="field-input" placeholder="86 083 4385" style="flex:1;">
+                                <input type="hidden" name="phone" id="phoneHidden">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="field-label">Street Address *</label>
+                            <input type="text" name="address_line1" class="field-input" placeholder="123 Main Street" required>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="field-label">City *</label>
+                                <input type="text" name="address_city" class="field-input" placeholder="Dublin" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="field-label">Postal Code *</label>
+                                <input type="text" name="address_postal_code" class="field-input" placeholder="D01 ABC" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="field-label">Country *</label>
+                                <select name="address_country" id="countryInput" class="field-input" required onchange="onCountryChange(this)">
+                                    <option value="">-- Select --</option>
+                                    {% for rate in shipping_rates %}
+                                    <option value="{{ rate.country }}" data-tracked="{{ rate.tracked_price }}" data-standard="{{ rate.standard_price }}" data-free="{% if rate.has_free_postage %}1{% else %}0{% endif %}">{{ rate.country }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="country-rate-info" style="display:none; margin-bottom:14px; padding:8px 14px; background:#fff8f0; border-radius:8px; border-left:3px solid #f4a261; font-size:0.82rem; color:#800020;">
+                            <i class="fas fa-shipping-fast"></i> <span id="country-rate-msg"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="field-label"><i class="fas fa-truck me-1" style="color:var(--primary);"></i> Delivery Option</label>
+                            <div id="delivery-options-wrap" class="d-flex gap-2 mt-1">
+                                <label id="label-standard" onclick="selectDelivery('standard')" class="delivery-option" style="display:none; flex:1; flex-direction:column; gap:4px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="radio" name="delivery_type" value="standard" checked onchange="selectDelivery('standard')" style="accent-color:#800020; flex-shrink:0;">
+                                        <span class="delivery-label">Standard Post</span>
+                                    </div>
+                                    <div class="delivery-desc" style="padding-left:22px;">No tracking included</div>
+                                    <div class="delivery-price" style="color:var(--success); padding-left:22px;">FREE</div>
+                                </label>
+                                <label id="label-tracked" onclick="selectDelivery('tracked')" class="delivery-option active" style="flex:1; flex-direction:column; gap:4px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="radio" name="delivery_type" value="tracked" onchange="selectDelivery('tracked')" style="accent-color:#800020; flex-shrink:0;">
+                                        <span class="delivery-label">Tracked Delivery</span>
+                                    </div>
+                                    <div class="delivery-desc" style="padding-left:22px;">Full tracking via An Post</div>
+                                    <div class="delivery-price" id="tracked-price-label" style="padding-left:22px;">+ €15.00</div>
+                                </label>
+                            </div>
                         </div>
 
                         <button type="submit" class="checkout-btn">
-                            <i class="fas fa-lock"></i>
-                            Proceed to Secure Checkout
+                            <i class="fas fa-lock"></i> Proceed to Secure Checkout
                         </button>
-
-                        <div class="security-badge">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>Secure payment powered by Stripe</span>
+                        <div class="security-note">
+                            <i class="fas fa-shield-alt"></i> Secure payment powered by Stripe
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- ORDER SUMMARY -->
+            <!-- RIGHT: Order Summary -->
             <div class="col-lg-4">
-                <div class="order-summary">
-                    <h3 class="summary-title">Order Summary</h3>
-
-                    <div class="summary-row">
-                        <span>Subtotal</span>
-                        <span>€{{ total }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Shipping</span>
-                        <span class="text-success">Free</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Tax</span>
-                        <span>€0.00</span>
-                    </div>
-
-                    <div class="summary-total">
-                        <span>Total</span>
-                        <span>€{{ total }}</span>
-                    </div>
-
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle"></i>
-                            Your order will be processed securely through Stripe payment gateway.
-                        </small>
+                <div class="summary-card">
+                    <div class="summary-title">Order Summary</div>
+                    <div class="summary-row"><span>Subtotal</span><span>€{{ total }}</span></div>
+                    <div class="summary-row" id="shipping-row"><span>Shipping</span><span id="shipping-row-value" style="color:#888;">Select country</span></div>
+                    <div class="summary-row" id="tracking-row" style="display:none;"><span style="color:var(--primary);font-size:0.85rem;"><i class="fas fa-check-circle me-1"></i>Express Tracked</span><span style="color:var(--primary);font-weight:600;" id="tracking-row-price">+ €15.00</span></div>
+                    <div class="summary-row"><span>Tax</span><span>€0.00</span></div>
+                    <div class="summary-total"><span>Total</span><span id="total-amount">€{{ total }}</span></div>
+                    <div style="margin-top:14px; padding:10px 14px; background:#f8f9fa; border-radius:8px; font-size:0.8rem; color:#888;">
+                        <i class="fas fa-info-circle me-1"></i> Final price confirmed at checkout
                     </div>
                 </div>
             </div>
         </div>
 
         {% else %}
-        <!-- EMPTY CART -->
-        <div class="empty-cart">
+        <div class="empty-wrap">
             <i class="fas fa-shopping-cart"></i>
             <h3>Your cart is empty</h3>
-            <p>Looks like you haven't added any items to your cart yet.</p>
-            <a href="/" class="shop-now-btn">
-                <i class="fas fa-store"></i>
-                Start Shopping
-            </a>
+            <p>Looks like you haven't added any items yet.</p>
+            <a href="/products/" class="shop-btn"><i class="fas fa-store"></i> Start Shopping</a>
         </div>
         {% endif %}
 
     </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; cursor:zoom-out;">
+    <div style="position:relative; max-width:90vw; max-height:90vh;">
+        <img id="lightboxImg" src="" alt="" style="max-width:90vw; max-height:90vh; border-radius:12px; object-fit:contain;">
+        <button onclick="closeLightbox()" style="position:absolute; top:-14px; right:-14px; width:32px; height:32px; border-radius:50%; border:none; background:white; color:#800020; font-weight:700; cursor:pointer;">✕</button>
+    </div>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+var baseTotal = parseFloat("{{ total }}");
+var trackedRate = 15.00;
+
+var countryCodes = {
+    'Australia':'+61','Austria':'+43','Belgium':'+32','Canada':'+1','Croatia':'+385',
+    'Denmark':'+45','Estonia':'+372','Finland':'+358','France':'+33','Germany':'+49',
+    'Hungary':'+36','Iceland':'+354','Ireland':'+353','Latvia':'+371','Lithuania':'+370',
+    'Luxembourg':'+352','Malta':'+356','Netherlands':'+31','New Zealand':'+64',
+    'Northern Ireland':'+44','Poland':'+48','Portugal':'+351','Singapore':'+65',
+    'Slovakia':'+421','Spain':'+34','Sweden':'+46','Switzerland':'+41',
+    'United Kingdom':'+44','United States':'+1'
+};
+
+function openLightbox(src, name) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) { if(e.key==='Escape') closeLightbox(); });
+
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('form[action*="stripe"]');
+    if (form) {
+        form.addEventListener('submit', function() {
+            var code = document.getElementById('phoneCode').value;
+            var number = document.getElementById('phoneNumber').value.trim();
+            document.getElementById('phoneHidden').value = code + ' ' + number;
+        });
+    }
+});
+
+function showToast(msg, color) {
+    var t = document.getElementById('cartToast');
+    t.textContent = msg;
+    t.style.background = color || '#27ae60';
+    t.style.display = 'block';
+    t.style.opacity = '1';
+    setTimeout(function() { t.style.opacity='0'; setTimeout(function(){t.style.display='none';},400); }, 3000);
+}
+
+function cartUpdate(productId, action, btn, stock) {
+    if (action === 'increase' && stock !== undefined) {
+        var current = parseInt(document.getElementById('qty-' + productId).textContent);
+        if (current >= stock) { showToast('Only ' + stock + ' in stock!', '#f39c12'); return; }
+    }
+    btn.disabled = true;
+    var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    fetch('/cart/ajax-update/' + productId + '/' + action + '/', {method:'POST', headers:{'X-CSRFToken':csrfToken,'Content-Type':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(data) {
+        if (data.quantity === 0) {
+            var row = document.getElementById('cart-row-' + productId);
+            row.style.transition = 'all 0.3s';
+            row.style.opacity = '0';
+            setTimeout(function() {
+                row.remove();
+                if (document.querySelectorAll('.cart-item').length === 0) { location.reload(); }
+                else { updateTotals(); }
+            }, 300);
+        } else {
+            document.getElementById('qty-' + productId).textContent = data.quantity;
+            var priceTags = btn.closest('.row').querySelectorAll('.price, .subtotal');
+            var unitPrice = parseFloat(priceTags[0].textContent.replace('€',''));
+            document.getElementById('sub-' + productId).textContent = '€' + (unitPrice * data.quantity).toFixed(2);
+            updateTotals();
+        }
+        btn.disabled = false;
+    })
+    .catch(function(){ btn.disabled = false; });
+}
+
+function updateTotals() {
+    var items = document.querySelectorAll('.cart-item');
+    var total = 0;
+    items.forEach(function(item) {
+        var id = item.id.replace('cart-row-','');
+        var sub = document.getElementById('sub-' + id);
+        if (sub) total += parseFloat(sub.textContent.replace('€',''));
+    });
+    baseTotal = total;
+    var tracked = document.querySelector('input[name="delivery_type"][value="tracked"]');
+    var grandTotal = (tracked && tracked.checked) ? total + trackedRate : total;
+    document.getElementById('total-amount').textContent = '€' + grandTotal.toFixed(2);
+}
+
+function onCountryChange(select) {
+    var option = select.options[select.selectedIndex];
+    var country = option.value;
+    var tracked = parseFloat(option.getAttribute('data-tracked')) || 15.00;
+    var hasFree = option.getAttribute('data-free') === '1';
+    trackedRate = tracked;
+    document.getElementById('trackedRateField').value = tracked.toFixed(2);
+    document.getElementById('tracked-price-label').textContent = '+ €' + tracked.toFixed(2);
+    document.getElementById('tracking-row-price').textContent = '+ €' + tracked.toFixed(2);
+
+    var labelStandard = document.getElementById('label-standard');
+    if (hasFree) {
+        labelStandard.style.display = 'flex';
+        document.querySelector('input[name="delivery_type"][value="standard"]').checked = true;
+        selectDelivery('standard');
+    } else {
+        labelStandard.style.display = 'none';
+        document.querySelector('input[name="delivery_type"][value="tracked"]').checked = true;
+        selectDelivery('tracked');
+    }
+
+    var info = document.getElementById('country-rate-info');
+    var msg = document.getElementById('country-rate-msg');
+    if (country) {
+        info.style.display = 'block';
+        msg.textContent = hasFree ? 'Free standard postage for ' + country + '. Express Tracked: €' + tracked.toFixed(2) : 'Express Tracked to ' + country + ': €' + tracked.toFixed(2);
+    } else {
+        info.style.display = 'none';
+    }
+
+    if (countryCodes[country]) {
+        var phoneSelect = document.getElementById('phoneCode');
+        for (var i = 0; i < phoneSelect.options.length; i++) {
+            if (phoneSelect.options[i].value === countryCodes[country]) { phoneSelect.selectedIndex = i; break; }
+        }
+    }
+}
+
+function selectDelivery(type) {
+    var labelStandard = document.getElementById('label-standard');
+    var labelTracked = document.getElementById('label-tracked');
+    var trackingRow = document.getElementById('tracking-row');
+    var shippingRow = document.getElementById('shipping-row');
+    var shippingRowValue = document.getElementById('shipping-row-value');
+    var totalAmount = document.getElementById('total-amount');
+
+    if (type === 'tracked') {
+        labelTracked.classList.add('active');
+        labelStandard.classList.remove('active');
+        if (trackingRow) trackingRow.style.display = 'flex';
+        if (shippingRow) shippingRow.style.display = 'none';
+        if (totalAmount) totalAmount.textContent = '€' + (baseTotal + trackedRate).toFixed(2);
+    } else {
+        labelStandard.classList.add('active');
+        labelTracked.classList.remove('active');
+        if (trackingRow) trackingRow.style.display = 'none';
+        if (shippingRow) { shippingRow.style.display = 'flex'; }
+        if (shippingRowValue) { shippingRowValue.textContent = 'Free'; shippingRowValue.style.color = '#27ae60'; }
+        if (totalAmount) totalAmount.textContent = '€' + baseTotal.toFixed(2);
+    }
+}
+</script>
 </body>
 </html>

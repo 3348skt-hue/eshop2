@@ -22,11 +22,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY','django-insecure-rurog5dy1^w#51-g2+=+7g*@3yuzg-3vnnqxhg9_l%djy(_9tc')
+# Load .env file
+from pathlib import Path as _Path
+_env_file = _Path('/home/maksupplies/.env')
+if _env_file.exists():
+    for _line in _env_file.read_text().splitlines():
+        if '=' in _line and not _line.startswith('#'):
+            _k, _v = _line.split('=', 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
 
-STRIPE_PUBLIC_KEY = 'pk_test_51SywoVRujOUNWAGauDehsCr4FRExYpKV593HjW5vaj69yJrYtdIOZMel0GqXA0cmsqMxzOWoYKqCpyapxrS67fVv00OECqi7bT'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError('DJANGO_SECRET_KEY env var is not set')
+
+STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
-STRIPE_WEBHOOK_SECRET = 'whsec_86c5d7588c6bc0e723dfb473a89d00be588cf2b052ecd2173831cfe5b6f10ff5'  # optional (later)
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -47,9 +58,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'products',
+    'dashboard',
     'cart',
     'orders',
     'accounts',
+    'django_ratelimit',
 ]
 
 MIDDLEWARE = [
@@ -88,8 +101,12 @@ WSGI_APPLICATION = 'eshop.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'maksupplies$default',
+        'USER': 'maksupplies',
+        'PASSWORD': os.environ.get('DB_PASS', ''),
+        'HOST': 'maksupplies.mysql.pythonanywhere-services.com',
+        'PORT': '3306',
     }
 }
 
@@ -137,3 +154,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Email Settings
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "3348skt@gmail.com"
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = "MAK Supplies <3348skt@gmail.com>"
+
+# HTTPS Security
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'

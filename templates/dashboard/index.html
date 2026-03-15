@@ -1,0 +1,276 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swapfamily=Plus+Jakarta+Sans:wght@400;500;600;700;800https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swapdisplay=swap" rel="stylesheet">
+<style>
+:root {
+  --smoke: #3d4451;
+  --smoke-light: #5a6275;
+  --smoke-dark: #252b36;
+  --pale: #e8eaee;
+  --pale-mid: #d0d4dc;
+  --pale-light: #f4f5f7;
+  --pale-white: #fafbfc;
+  --accent: #6b7280;
+  --accent-soft: #9ca3af;
+  --glass: rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.5);
+  --shadow-soft: 0 4px 24px rgba(61,68,81,0.10);
+  --shadow-med: 0 8px 40px rgba(61,68,81,0.15);
+  --shadow-strong: 0 16px 60px rgba(61,68,81,0.22);
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+* { box-sizing: border-box; }
+body, .dashboard-body { background: #eef0f4 !important; }
+.dash-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #e8eaee 0%, #eef0f4 40%, #e4e7ed 100%); z-index: -2; }
+.dash-bg::before { content: ''; position: fixed; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(107,114,128,0.12) 0%, transparent 70%); border-radius: 50%; z-index: -1; }
+.dash-bg::after { content: ''; position: fixed; bottom: -200px; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(90,98,117,0.10) 0%, transparent 70%); border-radius: 50%; z-index: -1; }
+.glass-card { background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: var(--radius); box-shadow: var(--shadow-soft); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.glass-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-med); }
+.hero-banner { background: linear-gradient(135deg, var(--smoke-dark) 0%, var(--smoke) 50%, var(--smoke-light) 100%); border-radius: 22px; padding: 28px 32px; margin-bottom: 22px; position: relative; overflow: hidden; box-shadow: var(--shadow-strong); }
+.hero-banner::before { content: ''; position: absolute; top: -60px; right: -60px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%); border-radius: 50%; }
+.hero-banner::after { content: ''; position: absolute; bottom: -40px; left: 30%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%); border-radius: 50%; }
+.hero-eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+.hero-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 28px; font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 4px; }
+.hero-date { font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.45); }
+.hero-stat-box { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 14px 20px; text-align: center; min-width: 115px; backdrop-filter: blur(8px); transition: background 0.2s; }
+.hero-stat-box:hover { background: rgba(255,255,255,0.13); }
+.hero-stat-label { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
+.hero-stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; color: #fff; line-height: 1; }
+.hero-stat-sub { font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+.section-eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--smoke-light); margin-bottom: 10px; margin-top: 2px; display: flex; align-items: center; gap: 8px; }
+.section-eyebrow::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--pale-mid), transparent); }
+.kpi-card { background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 20px 18px 16px; box-shadow: var(--shadow-soft); text-decoration: none; display: block; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--smoke), var(--smoke-light)); border-radius: var(--radius) var(--radius) 0 0; opacity: 0; transition: opacity 0.2s; }
+.kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-med); }
+.kpi-card:hover::before { opacity: 1; }
+.kpi-icon { width: 42px; height: 42px; border-radius: 11px; background: linear-gradient(135deg, var(--pale) 0%, var(--pale-mid) 100%); display: flex; align-items: center; justify-content: center; font-size: 19px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(61,68,81,0.12); }
+.kpi-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+.kpi-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 28px; font-weight: 800; color: var(--smoke-dark); line-height: 1; }
+.kpi-value.sm { font-size: 18px; }
+.kpi-sub { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--accent-soft); margin-top: 5px; }
+.alert-pill { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 2px 12px rgba(61,68,81,0.08); }
+.alert-pill:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+.alert-pill-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; color: var(--smoke-dark); }
+.alert-pill-sub { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--accent); }
+.panel { background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow-soft); height: 100%; }
+.panel-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; color: var(--smoke-dark); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.panel-link { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--smoke-light); text-decoration: none; letter-spacing: 0.5px; transition: color 0.15s; }
+.panel-link:hover { color: var(--smoke-dark); }
+.bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 3px; }
+.bar-fill { width: 85%; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, var(--smoke-light), var(--smoke-dark)); min-height: 2px; transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.bar-fill.empty { background: var(--pale-mid); }
+.bar-label { font-family: 'Inter', sans-serif; font-size: 9px; color: var(--accent-soft); font-weight: 600; letter-spacing: 0.5px; }
+.bar-val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; color: var(--smoke); font-weight: 700; }
+.trend-wrap { display: flex; align-items: flex-end; gap: 5px; height: 72px; padding: 0 2px; }
+.sku-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(208,212,220,0.4); }
+.sku-rank { width: 24px; height: 24px; border-radius: 7px; background: var(--pale); display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 800; color: var(--smoke); flex-shrink: 0; }
+.sku-name { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--smoke-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sku-code { font-size: 10px; color: var(--accent-soft); }
+.sku-units { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; color: var(--smoke); }
+.sku-rev { font-family: 'Inter', sans-serif; font-size: 10px; color: var(--accent-soft); }
+.qa-btn { background: rgba(255,255,255,0.6); border: 1px solid rgba(208,212,220,0.6); border-radius: 11px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; text-decoration: none; transition: all 0.15s; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--smoke-dark); }
+.qa-btn:hover { background: rgba(255,255,255,0.9); border-color: var(--smoke-light); color: var(--smoke-dark); transform: translateX(3px); box-shadow: 0 4px 16px rgba(61,68,81,0.12); }
+.qa-badge { margin-left: auto; border-radius: 8px; padding: 2px 9px; font-size: 10px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+.dash-table { width: 100%; border-collapse: collapse; }
+.dash-table thead tr { border-bottom: 1px solid var(--pale-mid); }
+.dash-table th { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); padding: 0 8px 10px; }
+.dash-table td { font-family: 'Inter', sans-serif; font-size: 12px; padding: 9px 8px; vertical-align: middle; border-bottom: 1px solid rgba(208,212,220,0.3); color: var(--smoke-dark); }
+.dash-table tbody tr:last-child td { border-bottom: none; }
+.dash-table tbody tr:hover td { background: rgba(255,255,255,0.4); }
+.table-footer { padding: 9px 14px; border-top: 1px solid rgba(208,212,220,0.4); background: rgba(244,245,247,0.6); border-radius: 0 0 var(--radius) var(--radius); display: flex; justify-content: space-between; align-items: center; }
+.badge-done { background: rgba(220,252,231,0.8); color: #15803d; border-radius: 7px; padding: 2px 8px; font-size: 10px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+.badge-partial { background: rgba(255,247,237,0.9); color: #c2410c; border-radius: 7px; padding: 2px 8px; font-size: 10px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+.badge-pend { background: rgba(219,234,254,0.8); color: #1d4ed8; border-radius: 7px; padding: 2px 8px; font-size: 10px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+.badge-stock-zero { background: rgba(254,226,226,0.8); color: #991b1b; border-radius: 8px; padding: 2px 10px; font-weight: 800; font-size: 12px; font-family: 'Plus Jakarta Sans', sans-serif; }
+.badge-country { background: var(--pale); color: var(--smoke); border-radius: 6px; padding: 2px 7px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 600; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp 0.45s ease both; }
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.10s; }
+.fade-up-3 { animation-delay: 0.15s; }
+.fade-up-4 { animation-delay: 0.20s; }
+.modal-header-smoke { background: linear-gradient(135deg, var(--smoke-dark), var(--smoke)); padding: 18px 24px; display: flex; align-items: center; gap: 12px; }
+</style>
+<div class="dash-bg"></div>
+<div class="hero-banner fade-up">
+  <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap; position:relative; z-index:1;">
+    <div style="flex:1; min-width:200px;">
+      <div class="hero-eyebrow">Dashboard Overview</div>
+      <div class="hero-title">MAK Supplies</div>
+      <div class="hero-date">{% now "l, d F Y" %}</div>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <div class="hero-stat-box"><div class="hero-stat-label">Today Orders</div><div class="hero-stat-value">{{ today_orders }}</div><div class="hero-stat-sub">€{{ today_sales }}</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-label">This Month</div><div class="hero-stat-value">€{{ monthly_sales }}</div><div class="hero-stat-sub">&nbsp;</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-label">This Year</div><div class="hero-stat-value">€{{ yearly_sales }}</div><div class="hero-stat-sub">&nbsp;</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-label">Stock Value</div><div class="hero-stat-value" style="font-size:18px;">PKR {{ stock_value|floatformat:0 }}</div><div class="hero-stat-sub">&nbsp;</div></div>
+    </div>
+  </div>
+</div>
+{% if unposted > 0 or out_of_stock > 0 or low_stock > 0 or pending_pos > 0 or maker_balance > 0 %}
+<div class="d-flex gap-2 flex-wrap mb-3 fade-up fade-up-1">
+  {% if unposted > 0 %}<a href="/dashboard/orders/?unposted=1" class="alert-pill" style="border-left:3px solid #f59e0b;"><span style="font-size:20px;">⚠️</span><div><div class="alert-pill-title">{{ unposted }} Unposted</div><div class="alert-pill-sub">Orders pending</div></div></a>{% endif %}
+  {% if out_of_stock > 0 %}<a href="/dashboard/inventory/?sort=stock&dir=asc" class="alert-pill" style="border-left:3px solid #ef4444;"><span style="font-size:20px;">🚨</span><div><div class="alert-pill-title">{{ out_of_stock }} Out of Stock</div><div class="alert-pill-sub">Zero inventory</div></div></a>{% endif %}
+  {% if low_stock > 0 %}<a href="/dashboard/purchase-orders/" class="alert-pill" style="border-left:3px solid #f97316;"><span style="font-size:20px;">📉</span><div><div class="alert-pill-title">{{ low_stock }} Low Stock</div><div class="alert-pill-sub">Below reorder level</div></div></a>{% endif %}
+  {% if pending_pos > 0 %}<a href="/dashboard/purchase-orders/" class="alert-pill" style="border-left:3px solid #3b82f6;"><span style="font-size:20px;">📋</span><div><div class="alert-pill-title">{{ pending_pos }} Pending POs</div><div class="alert-pill-sub">PKR {{ pending_po_value|floatformat:0 }} value</div></div></a>{% endif %}
+  {% if maker_balance > 0 %}<a href="/dashboard/makers/" class="alert-pill" style="border-left:3px solid #8b5cf6;"><span style="font-size:20px;">💳</span><div><div class="alert-pill-title">PKR {{ maker_balance|floatformat:0 }} Due</div><div class="alert-pill-sub">Maker payments</div></div></a>{% endif %}
+</div>
+{% endif %}
+<div class="section-eyebrow fade-up fade-up-2">Key Metrics</div>
+<div class="row g-3 mb-4 fade-up fade-up-2">
+  <div class="col-md-2 col-6"><a href="/dashboard/orders/" class="kpi-card"><div class="kpi-icon">📦</div><div class="kpi-label">Total Orders</div><div class="kpi-value">{{ total_orders }}</div><div class="kpi-sub">All time</div></a></div>
+  <div class="col-md-2 col-6"><a href="/dashboard/inventory/" class="kpi-card"><div class="kpi-icon">🗄️</div><div class="kpi-label">Products</div><div class="kpi-value">{{ total_products }}</div><div class="kpi-sub">{{ out_of_stock }} out of stock</div></a></div>
+  <div class="col-md-2 col-6"><a href="/dashboard/reports/inventory-valuation/" class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-label">Stock Value</div><div class="kpi-value sm">PKR {{ stock_value|floatformat:0 }}</div><div class="kpi-sub">Potential: PKR {{ potential_profit|floatformat:0 }}</div></a></div>
+  <div class="col-md-2 col-6"><a href="/dashboard/purchase-orders/" class="kpi-card"><div class="kpi-icon">🛒</div><div class="kpi-label">Purchase Orders</div><div class="kpi-value">{{ total_pos }}</div><div class="kpi-sub">{{ pending_pos }} pending</div></a></div>
+  <div class="col-md-2 col-6"><a href="/dashboard/makers/" class="kpi-card"><div class="kpi-icon">🏭</div><div class="kpi-label">Makers</div><div class="kpi-value">{{ total_makers }}</div><div class="kpi-sub">{% if maker_balance > 0 %}PKR {{ maker_balance|floatformat:0 }} due{% else %}All clear{% endif %}</div></a></div>
+  <div class="col-md-2 col-6"><a href="/dashboard/ebay/" class="kpi-card"><div class="kpi-icon">🏷️</div><div class="kpi-label">eBay Listings</div><div class="kpi-value">{{ total_listings }}</div><div class="kpi-sub">Active listings</div></a></div>
+</div>
+<div class="section-eyebrow fade-up fade-up-3">Analytics & Actions</div>
+<div class="row g-3 mb-4 fade-up fade-up-3">
+  <div class="col-md-4">
+    <div class="panel">
+      <div class="panel-title"><span>📈 7-Day Sales Trend</span><a href="/dashboard/orders/report/" class="panel-link">Full report →</a></div>
+      <div class="trend-wrap">
+        {% for d in trend_days %}
+        <div class="bar-col">
+          <div class="bar-val">{% if d.cnt > 0 %}{{ d.cnt }}{% endif %}</div>
+          <div style="width:100%; flex:1; display:flex; align-items:flex-end;"><div class="bar-fill {% if d.cnt == 0 %}empty{% endif %}" style="height:{% if max_rev > 0 %}{% widthratio d.rev max_rev 60 %}{% else %}0{% endif %}px;"></div></div>
+          <div class="bar-label">{{ d.label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px; padding-top:10px; border-top:1px solid rgba(208,212,220,0.4); display:flex; justify-content:space-between;">
+        <span style="font-family:'Inter',sans-serif; font-size:12px; color:var(--accent);">7-day total: <strong style="color:var(--smoke-dark);">{% for d in trend_days %}{% if not forloop.first %}+{% endif %}{{ d.cnt }}{% endfor %}</strong></span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; color:var(--smoke);">Today: {{ today_orders }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel">
+      <div class="panel-title"><span>🏆 Top SKUs This Month</span><a href="/dashboard/reports/sales-vs-purchase/" class="panel-link">Full report →</a></div>
+      {% for s in top_skus %}
+      <div class="sku-row">
+        <div class="sku-rank">{{ forloop.counter }}</div>
+        <div style="flex:1; min-width:0;"><div class="sku-name" title="{{ s.1 }}">{{ s.1|truncatechars:28 }}</div><div class="sku-code">{{ s.0 }}</div></div>
+        <div style="text-align:right; flex-shrink:0;"><div class="sku-units">{{ s.2 }} units</div><div class="sku-rev">€{{ s.3|floatformat:0 }}</div></div>
+      </div>
+      {% empty %}
+      <div style="text-align:center; color:var(--accent-soft); padding:20px 0; font-family:'Inter',sans-serif; font-size:13px;">No sales this month yet</div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel">
+      <div class="panel-title"><span>⚡ Quick Actions</span></div>
+      <div class="d-flex flex-column gap-2">
+        <a href="/dashboard/orders/?unposted=1" class="qa-btn"><span style="font-size:17px;">⏳</span><div style="flex:1;">Unposted Orders</div>{% if unposted > 0 %}<span class="qa-badge" style="background:#fef3c7;color:#92400e;">{{ unposted }}</span>{% endif %}</a>
+        <a href="/dashboard/purchase-orders/" class="qa-btn"><span style="font-size:17px;">📋</span><div style="flex:1;">Purchase Orders</div>{% if pending_pos > 0 %}<span class="qa-badge" style="background:#dbeafe;color:#1e40af;">{{ pending_pos }} pending</span>{% endif %}</a>
+        <a href="/dashboard/inventory/stock-movement/" class="qa-btn"><span style="font-size:17px;">📦</span><div style="flex:1;">Stock Movement</div>{% if movements_today > 0 %}<span class="qa-badge" style="background:#dcfce7;color:#15803d;">{{ movements_today }} today</span>{% endif %}</a>
+        <a href="/dashboard/reports/reorder-suggestions/" class="qa-btn"><span style="font-size:17px;">🎯</span><div style="flex:1;">Reorder Suggestions</div>{% if low_stock > 0 %}<span class="qa-badge" style="background:#fee2e2;color:#991b1b;">{{ low_stock }} items</span>{% endif %}</a>
+        <a href="/dashboard/makers/performance/" class="qa-btn"><span style="font-size:17px;">🏆</span><div style="flex:1;">Maker Performance</div></a>
+        <a href="/dashboard/reports/inventory-valuation/" class="qa-btn"><span style="font-size:17px;">💰</span><div style="flex:1;">Inventory Valuation</div></a>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="section-eyebrow fade-up fade-up-4">Recent Activity</div>
+<div class="row g-3 fade-up fade-up-4">
+  <div class="col-md-4">
+    <div class="panel" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 18px 0;"><div class="panel-title" style="margin-bottom:12px;">Recent Orders</div></div>
+      <table class="dash-table">
+        <thead><tr><th style="padding-left:18px;">Customer</th><th>Country</th><th>Total</th><th style="padding-right:18px;">Date</th></tr></thead>
+        <tbody>
+        {% for o in recent_orders %}
+        <tr><td style="padding-left:18px; font-weight:600; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ o.0 }}</td><td><span class="badge-country">{{ o.1 }}</span></td><td style="font-weight:700; color:var(--smoke);">{{ o.2 }}</td><td style="padding-right:18px; color:var(--accent-soft); font-size:11px;">{{ o.3|date:"d M" }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; color:var(--accent-soft); padding:20px; font-family:'Inter',sans-serif;">No recent orders</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="table-footer"><a href="/dashboard/orders/" style="font-family:'Inter',sans-serif; font-size:12px; font-weight:700; color:var(--smoke-light); text-decoration:none;">View all orders →</a></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 18px 0;"><div class="panel-title" style="margin-bottom:12px;">⚠️ Low Stock Alert</div></div>
+      <table class="dash-table">
+        <thead><tr><th style="padding-left:18px;">SKU</th><th>Title</th><th style="text-align:center;">Stock</th><th style="text-align:center; padding-right:18px;">Reorder</th></tr></thead>
+        <tbody>
+        {% for item in low_stock_items %}
+        <tr><td style="padding-left:18px;"><code style="font-size:10px; color:var(--smoke-light);">{{ item.0 }}</code></td><td style="font-size:11px; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ item.1|truncatechars:22 }}</td><td style="text-align:center;"><span class="badge-stock-zero">{{ item.2 }}</span></td><td style="text-align:center; color:var(--accent-soft); font-size:12px; padding-right:18px;">{{ item.3 }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; padding:20px; font-family:'Inter',sans-serif; color:#15803d; font-weight:700;">✅ All stock levels OK</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="table-footer"><a href="/dashboard/purchase-orders/" style="font-family:'Inter',sans-serif; font-size:12px; font-weight:700; color:#ef4444; text-decoration:none;">View POs →</a><button onclick="openLowStockPO()" style="background:linear-gradient(135deg,var(--smoke-dark),var(--smoke)); color:white; border:none; border-radius:9px; padding:5px 14px; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:700; cursor:pointer;">🛒 Auto-Create POs</button></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="panel" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 18px 0;"><div class="panel-title" style="margin-bottom:12px;">Recent Purchase Orders</div></div>
+      <table class="dash-table">
+        <thead><tr><th style="padding-left:18px;">PO#</th><th>Maker</th><th style="text-align:center;">Value</th><th style="text-align:center; padding-right:18px;">Status</th></tr></thead>
+        <tbody>
+        {% for po in recent_pos %}
+        <tr><td style="padding-left:18px;"><a href="/dashboard/purchase-orders/?q={{ po.0 }}" style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; color:var(--smoke); text-decoration:none; font-size:12px;">#{{ po.0 }}</a></td><td style="font-size:12px; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ po.1 }}</td><td style="text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700;">PKR {{ po.2|floatformat:0 }}</td><td style="text-align:center; padding-right:18px;">{% if po.4 == 'received' %}<span class="badge-done">✅ Done</span>{% elif po.4 == 'partial' %}<span class="badge-partial">🟠 Part</span>{% else %}<span class="badge-pend">🟡 Pend</span>{% endif %}</td></tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; color:var(--accent-soft); padding:20px; font-family:'Inter',sans-serif;">No purchase orders yet</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="table-footer"><a href="/dashboard/purchase-orders/" style="font-family:'Inter',sans-serif; font-size:12px; font-weight:700; color:#d97706; text-decoration:none;">View all POs →</a><a href="/dashboard/makers/performance/" style="font-family:'Inter',sans-serif; font-size:12px; font-weight:700; color:var(--accent); text-decoration:none;">🏆 Performance →</a></div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="lowStockPoModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0" style="border-radius:20px; overflow:hidden; box-shadow:var(--shadow-strong);">
+      <div class="modal-header-smoke">
+        <div><div style="font-family:'Inter',sans-serif; color:rgba(255,255,255,0.45); font-size:9px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:3px;">Auto Generate</div><div style="font-family:'Plus Jakarta Sans',sans-serif; color:white; font-size:16px; font-weight:800;">🛒 Purchase Orders from Low Stock</div></div>
+        <div style="display:flex; gap:6px; margin-left:20px;"><button id="lsFilterReorder" onclick="setLSFilter('reorder')" style="background:white;color:var(--smoke-dark);border:none;border-radius:8px;padding:5px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:11px;cursor:pointer;">⚠ Needs Reorder</button><button id="lsFilterAll" onclick="setLSFilter('all')" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:5px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:11px;cursor:pointer;">All Items</button></div>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4" id="lowStockPoBody"><div class="text-center text-muted py-4">Loading...</div></div>
+      <div style="padding:12px 20px; border-top:1px solid var(--pale-mid); background:var(--pale-light); display:flex; gap:8px; justify-content:space-between; align-items:center;">
+        <div style="font-family:'Inter',sans-serif; font-size:13px; color:var(--accent);" id="lowStockPoSummary"></div>
+        <div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:9px; font-family:'Inter',sans-serif;">Cancel</button><button type="button" class="btn btn-sm btn-warning fw-bold px-3" onclick="printAllPOs()" style="border-radius:9px; font-family:'Plus Jakarta Sans',sans-serif;">🖨️ Print PDFs</button><button type="button" onclick="saveLowStockPO()" id="saveLowStockBtn" style="background:linear-gradient(135deg,var(--smoke-dark),var(--smoke-light)); color:white; border:none; border-radius:9px; padding:6px 18px; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:12px; cursor:pointer;">💾 Save All Purchase Orders</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let lowStockGroups = [], lsFilter = 'reorder';
+function setLSFilter(f) {
+  lsFilter = f;
+  document.getElementById('lsFilterReorder').style.background = f==='reorder'?'white':'rgba(255,255,255,0.15)';
+  document.getElementById('lsFilterReorder').style.color = f==='reorder'?'#252b36':'white';
+  document.getElementById('lsFilterAll').style.background = f==='all'?'white':'rgba(255,255,255,0.15)';
+  document.getElementById('lsFilterAll').style.color = f==='all'?'#252b36':'white';
+  loadLowStockData();
+}
+function loadLowStockData() {
+  document.getElementById('lowStockPoBody').innerHTML = '<div class="text-center text-muted py-4">⏳ Loading...</div>';
+  document.getElementById('lowStockPoSummary').textContent = '';
+  fetch('/dashboard/inventory/low-stock-po/?filter=' + lsFilter).then(r=>r.json()).then(data=>{lowStockGroups=data.groups;renderLowStockPO(data.groups);}).catch(()=>{document.getElementById('lowStockPoBody').innerHTML='<div class="text-center text-danger py-4">Error loading data</div>';});
+}
+function openLowStockPO() { lsFilter='reorder'; new bootstrap.Modal(document.getElementById('lowStockPoModal')).show(); loadLowStockData(); }
+function renderLowStockPO(groups) {
+  if (!groups||groups.length===0){document.getElementById('lowStockPoBody').innerHTML='<div class="text-center text-success py-4 fw-bold">✅ No items need reordering!</div>';return;}
+  let totalItems=0,totalValue=0,html='';
+  groups.forEach((g,gi)=>{
+    html+=`<div style="margin-bottom:20px;"><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:800;color:#252b36;margin-bottom:8px;">🏭 ${g.maker} <span style="font-size:11px;color:#6b7280;font-weight:400;">${g.items.length} items</span></div><table class="table table-sm mb-0" style="border:1px solid #d0d4dc;border-radius:10px;overflow:hidden;"><thead style="background:#f4f5f7;"><tr><th style="font-size:11px;">SKU</th><th style="font-size:11px;">Title</th><th style="font-size:11px;text-align:center;">Stock</th><th style="font-size:11px;text-align:center;">Reorder</th><th style="font-size:11px;text-align:center;">Order Qty</th><th style="font-size:11px;text-align:center;">Price</th><th style="font-size:11px;text-align:right;">Total</th></tr></thead><tbody id="groupTbody_${gi}">`;
+    g.items.forEach((item,ii)=>{totalItems++;const lineTotal=(item.order_qty*item.price);totalValue+=lineTotal;html+=`<tr><td><code style="font-size:11px;">${item.sku}</code></td><td style="font-size:12px;">${item.title||''}</td><td style="text-align:center;"><span style="background:rgba(254,226,226,0.8);color:#991b1b;border-radius:8px;padding:2px 10px;font-weight:800;font-size:12px;">${item.stock}</span></td><td style="text-align:center;font-size:12px;">${item.reorder}</td><td style="text-align:center;"><input type="number" value="${item.order_qty}" min="1" style="width:70px;text-align:center;border:2px solid #d0d4dc;border-radius:7px;padding:3px;font-weight:700;" onchange="updateLineTotal(${gi},${ii},this.value)"></td><td style="text-align:center;"><input type="number" value="${item.price}" min="0" step="0.01" style="width:80px;text-align:center;border:2px solid #d0d4dc;border-radius:7px;padding:3px;font-weight:700;" onchange="updateLinePrice(${gi},${ii},this.value)"></td><td style="text-align:right;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;" id="lineTotal_${gi}_${ii}">PKR ${Math.round(lineTotal).toLocaleString()}</td></tr>`;});
+    html+=`</tbody></table></div>`;
+  });
+  document.getElementById('lowStockPoBody').innerHTML=html;
+  document.getElementById('lowStockPoSummary').textContent=`${totalItems} items across ${groups.length} makers — PKR ${Math.round(totalValue).toLocaleString()} total`;
+}
+function updateLineTotal(gi,ii,qty){lowStockGroups[gi].items[ii].order_qty=parseInt(qty)||1;const t=lowStockGroups[gi].items[ii].order_qty*lowStockGroups[gi].items[ii].price;document.getElementById(`lineTotal_${gi}_${ii}`).textContent='PKR '+Math.round(t).toLocaleString();}
+function updateLinePrice(gi,ii,price){lowStockGroups[gi].items[ii].price=parseFloat(price)||0;const t=lowStockGroups[gi].items[ii].order_qty*lowStockGroups[gi].items[ii].price;document.getElementById(`lineTotal_${gi}_${ii}`).textContent='PKR '+Math.round(t).toLocaleString();}
+function saveLowStockPO(){const btn=document.getElementById('saveLowStockBtn');btn.disabled=true;btn.textContent='⏳ Saving...';fetch('/dashboard/inventory/low-stock-po/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},body:JSON.stringify({groups:lowStockGroups})}).then(r=>r.json()).then(data=>{if(data.success){bootstrap.Modal.getInstance(document.getElementById('lowStockPoModal')).hide();window.location.href='/dashboard/purchase-orders/?batch='+data.batch_id;}else{alert('Error: '+(data.error||'Unknown'));btn.disabled=false;btn.textContent='💾 Save All Purchase Orders';}});}
+function printAllPOs(){if(!lowStockGroups.length){alert('No data to print');return;}let html='<html><head><title>Purchase Orders</title><style>body{font-family:Arial;font-size:12px;}table{width:100%;border-collapse:collapse;margin-bottom:20px;}th,td{border:1px solid #ddd;padding:6px;}th{background:#252b36;color:white;}h3{margin:0 0 8px;color:#3d4451;}.po-block{page-break-inside:avoid;margin-bottom:30px;}</style></head><body>';lowStockGroups.forEach(g=>{let total=g.items.reduce((s,i)=>s+(i.order_qty*i.price),0);html+=`<div class="po-block"><h3>🏭 ${g.maker} — Purchase Order</h3><table><thead><tr><th>SKU</th><th>Title</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>`;g.items.forEach(i=>{html+=`<tr><td>${i.sku}</td><td>${i.title||''}</td><td>${i.order_qty}</td><td>PKR ${i.price}</td><td>PKR ${Math.round(i.order_qty*i.price).toLocaleString()}</td></tr>`;});html+=`</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-weight:800;">Grand Total</td><td>PKR ${Math.round(total).toLocaleString()}</td></tr></tfoot></table></div>`;});html+='</body></html>';const w=window.open('','_blank');w.document.write(html);w.document.close();w.print();}
+</script>
+{% endblock %}

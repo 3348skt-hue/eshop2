@@ -1,0 +1,212 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h2 class="mb-3">Orders Report</h2>
+
+<form class="d-flex mb-3 gap-2 flex-wrap" method="get">
+    <input class="form-control" style="max-width:250px" name="q" value="{{ search }}" placeholder="Search orders...">
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <button class="btn btn-primary">Search</button>
+    <a href="?sort=stock&q={{ search }}" class="btn btn-outline-secondary {% if sort == 'stock' %}active{% endif %}">0. By Stock</a>
+    <a href="?sort=date&q={{ search }}" class="btn btn-outline-secondary {% if sort == 'date' %}active{% endif %}">1. By Date</a>
+    <a href="?sort=profit_pct&q={{ search }}" class="btn btn-outline-secondary {% if sort == 'profit_pct' %}active{% endif %}">2. By Profit%</a>
+    <a href="?sort=fee_pct&q={{ search }}" class="btn btn-outline-secondary {% if sort == 'fee_pct' %}active{% endif %}">6. By Fee%</a>
+</form>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card p-3 text-center border-primary">
+            <small class="text-muted">Total Euro</small>
+            <h5>€{{ total_euro }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card p-3 text-center border-success">
+            <small class="text-muted">Profit</small>
+            <h5>€{{ total_profit }} <small class="text-success">{{ profit_pct_avg }}%</small></h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card p-3 text-center border-warning">
+            <small class="text-muted">Cost</small>
+            <h5>€{{ total_cost }} <small class="text-warning">{{ cost_pct }}%</small></h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card p-3 text-center border-info">
+            <small class="text-muted">Postage</small>
+            <h5>€{{ total_post }} <small class="text-info">{{ post_pct }}%</small></h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card p-3 text-center border-danger">
+            <small class="text-muted">eBay Charges</small>
+            <h5>€{{ total_fee_charges }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card p-3 text-center">
+            <small class="text-muted">Orders</small>
+            <h5>{{ orders|length }}</h5>
+        </div>
+    </div>
+</div>
+
+<!-- Breakdown tabs -->
+<ul class="nav nav-tabs mb-3" id="reportTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#ordersTab">📦 Orders</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#countryTab">🌍 By Country</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#currencyTab">💱 By Currency</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#skuTab">🏷️ Top SKUs</a></li>
+</ul>
+
+<div class="tab-content">
+    <!-- Orders Tab -->
+    <div class="tab-pane fade show active" id="ordersTab">
+        <div class="table-responsive">
+        <table class="table table-striped table-hover table-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th><th>Order ID</th><th>Name</th><th>SKU</th>
+                    <th>Posted</th><th>Stock</th><th>Qty</th><th>Country</th>
+                    <th>Currency</th><th>Rate</th><th>Price</th><th>Total</th>
+                    <th>Fee</th><th>Fee%</th><th>Gross</th><th>Euro</th>
+                    <th>Cost</th><th>Post</th><th>Profit</th><th>Profit%</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for o in orders %}
+            <tr {% if o.profit_pct < 0 %}class="table-danger"{% elif o.profit_pct > 50 %}class="table-success"{% endif %}>
+                <td>{{ o.date }}</td>
+                <td><small>{{ o.orderid }}</small></td>
+                <td><small>{{ o.name }}</small></td>
+                <td>{{ o.sku }}</td>
+                <td>{% if o.posted %}<span class="badge bg-success">{{ o.posted }}</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}</td>
+                <td>{{ o.stock }}</td>
+                <td>{{ o.qty }}</td>
+                <td>{{ o.country }}</td>
+                <td>{{ o.currency }}</td>
+                <td>{{ o.rate }}</td>
+                <td>{{ o.price }}</td>
+                <td>{{ o.total }}</td>
+                <td>{{ o.fee }}</td>
+                <td>{{ o.fee_pct }}%</td>
+                <td>{{ o.gross }}</td>
+                <td>€{{ o.euro }}</td>
+                <td>€{{ o.cost }}</td>
+                <td>€{{ o.post }}</td>
+                <td>€{{ o.profit }}</td>
+                <td><strong {% if o.profit_pct < 0 %}style="color:red"{% elif o.profit_pct > 30 %}style="color:green"{% endif %}>{{ o.profit_pct }}%</strong></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary"
+                        onclick="openEdit({{ o.db_id }}, '{{ o.posted }}', {{ o.cost }}, {{ o.fee }}, {{ o.rate }}, {{ o.post }}, {{ o.price }}, '{{ o.comment }}')">
+                        ✏️
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- Country Tab -->
+    <div class="tab-pane fade" id="countryTab">
+        <table class="table table-sm table-striped" style="max-width:400px">
+            <thead class="table-dark"><tr><th>Country</th><th>Orders</th></tr></thead>
+            <tbody>
+            {% for country, count in country_counts %}
+            <tr><td>{{ country }}</td><td><strong>{{ count }}</strong></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Currency Tab -->
+    <div class="tab-pane fade" id="currencyTab">
+        <table class="table table-sm table-striped" style="max-width:400px">
+            <thead class="table-dark"><tr><th>Currency</th><th>Orders</th></tr></thead>
+            <tbody>
+            {% for currency, count in currency_counts %}
+            <tr><td>{{ currency }}</td><td><strong>{{ count }}</strong></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SKU Tab -->
+    <div class="tab-pane fade" id="skuTab">
+        <table class="table table-sm table-striped" style="max-width:400px">
+            <thead class="table-dark"><tr><th>SKU</th><th>Units Sold</th></tr></thead>
+            <tbody>
+            {% for sku, qty in sku_counts %}
+            <tr><td>{{ sku }}</td><td><strong>{{ qty }}</strong></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Edit Order</h5></div>
+            <form method="post" id="editForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label>Posted Date</label>
+                            <input type="date" class="form-control" name="posted" id="editPosted">
+                        </div>
+                        <div class="col-6">
+                            <label>Cost (€)</label>
+                            <input type="number" step="0.01" class="form-control" name="cost" id="editCost">
+                        </div>
+                        <div class="col-6">
+                            <label>eBay Fee</label>
+                            <input type="number" step="0.01" class="form-control" name="fee" id="editFee">
+                        </div>
+                        <div class="col-6">
+                            <label>Exchange Rate</label>
+                            <input type="number" step="0.0001" class="form-control" name="rate" id="editRate">
+                        </div>
+                        <div class="col-6">
+                            <label>Postage (€)</label>
+                            <input type="number" step="0.01" class="form-control" name="postage" id="editPostage">
+                        </div>
+                        <div class="col-6">
+                            <label>Price</label>
+                            <input type="number" step="0.01" class="form-control" name="price" id="editPrice">
+                        </div>
+                        <div class="col-12">
+                            <label>Comment</label>
+                            <input type="text" class="form-control" name="comment" id="editComment">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEdit(id, posted, cost, fee, rate, postage, price, comment) {
+    document.getElementById('editPosted').value = posted;
+    document.getElementById('editCost').value = cost;
+    document.getElementById('editFee').value = fee;
+    document.getElementById('editRate').value = rate;
+    document.getElementById('editPostage').value = postage;
+    document.getElementById('editPrice').value = price;
+    document.getElementById('editComment').value = comment;
+    document.getElementById('editForm').action = '/dashboard/orders/edit/' + id + '/';
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+</script>
+{% endblock %}

@@ -8,6 +8,14 @@ class Order(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20, blank=True, default='')
     shipping_address = models.JSONField()
+    STATUS_CHOICES = [
+        ('processing', 'Processing'),
+        ('posted', 'Posted'),
+        ('in_transit', 'In Transit'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
     paid = models.BooleanField(default=False)
     stripe_payment_intent = models.CharField(max_length=200, blank=True, default='')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)

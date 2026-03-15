@@ -1,0 +1,246 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+:root { --maroon:#a91b2e; --maroon-dark:#6b0f1a; --blue:#0284c7; --border:#e2e8f0; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; padding:22px 28px; border-radius:14px; margin-bottom:22px; box-shadow:0 8px 24px rgba(107,15,26,0.3); display:flex; align-items:center; gap:16px; }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.stat-card { background:white; border-radius:12px; padding:18px 22px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+.stat-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.stat-value { font-size:24px; font-weight:800; margin-top:4px; }
+.ledger-tbl th { background:#1e293b; color:white; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:10px 14px; }
+.ledger-tbl td { padding:10px 14px; font-size:13px; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
+.ledger-tbl tr:hover { background:#f8fafc; }
+.type-purchase { background:#fee2e2; color:#ef4444; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.type-payment { background:#dcfce7; color:#16a34a; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.type-advance { background:#e0f2fe; color:#0284c7; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+</style>
+
+<!-- Header -->
+<div class="page-header">
+    <div>
+        <h2>📒 {{ maker_name }} — Ledger</h2>
+        <p>Full transaction history and outstanding balance</p>
+    </div>
+    <a href="/dashboard/makers/" class="btn-new ms-auto" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:10px;padding:9px 20px;font-weight:700;text-decoration:none;">← Back to Makers</a>
+    <button onclick="printLedger()" class="btn-new" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:10px;padding:9px 20px;font-weight:700;">🖨️ Print / PDF</button>
+    <button onclick="openPayment()" class="btn-new" style="background:rgba(255,255,255,0.9);color:#a91b2e;border:none;border-radius:10px;padding:9px 20px;font-weight:700;">+ Add Payment</button>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Purchased</div>
+            <div class="stat-value" style="color:#ef4444;">PKR {{ total_debit|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Paid</div>
+            <div class="stat-value" style="color:#16a34a;">PKR {{ total_credit|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Outstanding Balance</div>
+            <div class="stat-value" style="color:{% if balance > 0 %}#ef4444{% else %}#16a34a{% endif %};">PKR {{ balance|floatformat:0 }}</div>
+            <div style="font-size:12px; color:#64748b; margin-top:4px;">{% if balance > 0 %}You owe this amount{% else %}In credit{% endif %}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Transactions</div>
+            <div class="stat-value" style="color:#6b0f1a;">{{ ledger|length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Ledger Table -->
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+    <table class="table mb-0 ledger-tbl">
+        <thead>
+            <tr>
+                <th>#</th><th>Date</th><th>Type</th><th>Description</th><th>Ref</th>
+                <th class="text-end">Debit (PKR)</th>
+                <th class="text-end">Credit (PKR)</th>
+                <th class="text-end">Balance (PKR)</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in ledger %}
+        <tr>
+            <td style="color:#94a3b8; font-size:12px;">{{ forloop.counter }}</td>
+            <td style="font-size:12px;">{{ e.date }}</td>
+            <td>
+                {% if e.type == 'purchase' %}<span class="type-purchase">🛒 Purchase</span>
+                {% elif e.type == 'payment' %}<span class="type-payment">💵 Payment</span>
+                {% elif e.type == 'advance' %}<span class="type-advance">⬆ Advance</span>
+                {% else %}<span>{{ e.type }}</span>{% endif %}
+            </td>
+            <td>{{ e.description }}</td>
+            <td style="font-size:12px; color:#64748b;">{{ e.ref }}</td>
+            <td class="text-end" style="color:#ef4444; font-weight:700;">{% if e.debit > 0 %}{{ e.debit|floatformat:0 }}{% endif %}</td>
+            <td class="text-end" style="color:#16a34a; font-weight:700;">{% if e.credit > 0 %}{{ e.credit|floatformat:0 }}{% endif %}</td>
+            <td class="text-end fw-bold" style="color:{% if e.balance > 0 %}#ef4444{% else %}#16a34a{% endif %};">{{ e.balance|floatformat:0 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted py-4">No transactions yet</td></tr>
+        {% endfor %}
+        </tbody>
+        {% if ledger %}
+        <tfoot>
+            <tr style="background:#f8fafc; font-weight:800;">
+                <td colspan="5" class="text-end" style="padding:12px 14px;">Totals</td>
+                <td class="text-end" style="color:#ef4444; padding:12px 14px;">{{ total_debit|floatformat:0 }}</td>
+                <td class="text-end" style="color:#16a34a; padding:12px 14px;">{{ total_credit|floatformat:0 }}</td>
+                <td class="text-end" style="color:{% if balance > 0 %}#ef4444{% else %}#16a34a{% endif %}; padding:12px 14px;">{{ balance|floatformat:0 }}</td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:14px; border:none; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#166534,#16a34a); padding:16px 22px; display:flex; align-items:center;">
+                <div style="color:white; font-size:16px; font-weight:800;">💵 Add Payment / Advance</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Type</label>
+                    <select class="form-select" id="payType">
+                        <option value="payment">💵 Payment (reduces balance)</option>
+                        <option value="advance">⬆ Advance Payment</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Amount (PKR)</label>
+                    <input type="number" class="form-control" id="payAmount" placeholder="0" min="1">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Date</label>
+                    <input type="date" class="form-control" id="payDate" value="{{ today }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Description</label>
+                    <input type="text" class="form-control" id="payDesc" placeholder="e.g. Bank transfer, Cash payment...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Reference (optional)</label>
+                    <input type="text" class="form-control" id="payRef" placeholder="e.g. Cheque no, Transfer ID...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn fw-bold text-white" onclick="savePayment()" id="savePayBtn" style="background:linear-gradient(135deg,#166534,#16a34a);border:none;border-radius:8px;padding:8px 24px;">💾 Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function printLedger() {
+    const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+    let rows = '';
+    let balance = 0;
+    {% for e in ledger %}
+    rows += `<tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ e.date }}</td>
+        <td>{{ e.type|title }}</td>
+        <td>{{ e.description }}</td>
+        <td>{{ e.ref }}</td>
+        <td style="text-align:right;color:#dc2626;">{% if e.debit > 0 %}{{ e.debit|floatformat:0 }}{% endif %}</td>
+        <td style="text-align:right;color:#16a34a;">{% if e.credit > 0 %}{{ e.credit|floatformat:0 }}{% endif %}</td>
+        <td style="text-align:right;font-weight:700;color:{% if e.balance > 0 %}#dc2626{% else %}#16a34a{% endif %};">{{ e.balance|floatformat:0 }}</td>
+    </tr>`;
+    {% endfor %}
+
+    const html = `<!DOCTYPE html><html><head><title>Ledger - {{ maker_name }}</title>
+    <style>
+        body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:20px;}
+        .header{background:#6b0f1a;color:white;padding:16px 20px;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;}
+        .header h2{margin:0;font-size:18px;}
+        .stats{display:flex;gap:16px;margin-bottom:16px;}
+        .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 16px;flex:1;}
+        .stat-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;}
+        .stat-value{font-size:18px;font-weight:800;margin-top:2px;}
+        table{width:100%;border-collapse:collapse;}
+        th{background:#1e293b;color:white;padding:8px 10px;font-size:11px;text-align:left;}
+        td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+        tr:nth-child(even) td{background:#f8fafc;}
+        .footer-row td{font-weight:800;background:#fef2f2;border-top:2px solid #a91b2e;}
+    </style></head><body>
+    <div class="header">
+        <div><h2>📒 {{ maker_name }} — Account Ledger</h2><div>Printed: ${today}</div></div>
+        <div style="text-align:right;"><div><strong>MAK Supplies</strong></div></div>
+    </div>
+    <div class="stats">
+        <div class="stat"><div class="stat-label">Total Purchased</div><div class="stat-value" style="color:#dc2626;">PKR {{ total_debit|floatformat:0 }}</div></div>
+        <div class="stat"><div class="stat-label">Total Paid</div><div class="stat-value" style="color:#16a34a;">PKR {{ total_credit|floatformat:0 }}</div></div>
+        <div class="stat"><div class="stat-label">Outstanding Balance</div><div class="stat-value" style="color:{% if balance > 0 %}#dc2626{% else %}#16a34a{% endif %};">PKR {{ balance|floatformat:0 }}</div></div>
+    </div>
+    <table>
+        <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Description</th><th>Ref</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Credit</th><th style="text-align:right;">Balance</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="footer-row">
+            <td colspan="5" style="text-align:right;">Totals</td>
+            <td style="text-align:right;color:#dc2626;">{{ total_debit|floatformat:0 }}</td>
+            <td style="text-align:right;color:#16a34a;">{{ total_credit|floatformat:0 }}</td>
+            <td style="text-align:right;">{{ balance|floatformat:0 }}</td>
+        </tr></tfoot>
+    </table>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 500);
+}
+
+function openPayment() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('payDate').value = today;
+    document.getElementById('payAmount').value = '';
+    document.getElementById('payDesc').value = '';
+    document.getElementById('payRef').value = '';
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
+    setTimeout(() => document.getElementById('payAmount').focus(), 400);
+}
+
+function savePayment() {
+    const amount = parseFloat(document.getElementById('payAmount').value);
+    const desc = document.getElementById('payDesc').value.trim();
+    const date = document.getElementById('payDate').value;
+    const ref = document.getElementById('payRef').value.trim();
+    const type = document.getElementById('payType').value;
+    const btn = document.getElementById('savePayBtn');
+
+    if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
+    if (!desc) { alert('Enter a description'); return; }
+
+    btn.disabled = true; btn.textContent = '⏳ Saving...';
+
+    fetch('/dashboard/makers/ledger/{{ maker_name }}/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({amount, description: desc, date, ref, type})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown'));
+            btn.disabled = false; btn.textContent = '💾 Save';
+        }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; btn.textContent = '💾 Save'; });
+}
+</script>
+{% endblock %}

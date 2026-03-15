@@ -1,0 +1,876 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+@media (max-width: 767px) {
+    .page-header { flex-direction: column; align-items: flex-start; padding: 16px !important; }
+    .page-header h2 { font-size: 18px !important; }
+    .btn-new { width: 100%; text-align: center; margin-top: 8px; }
+    .tab-switcher { font-size: 12px; }
+    .tab-btn { padding: 7px 4px !important; font-size: 11px !important; }
+    .search-card form { flex-direction: column; }
+    .search-card input, .search-card select { max-width: 100% !important; width: 100% !important; }
+    .po-table th, .po-table td { font-size: 0.75rem !important; padding: 7px 8px !important; white-space: nowrap; }
+}
+</style>
+
+
+<style>
+:root { --maroon:#a91b2e; --maroon-dark:#6b0f1a; --border:#e2e8f0; --surface:#f8fafc; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#8b1a2a,#a91b2e); color:white; padding:22px 28px; border-radius:14px; margin-bottom:22px; box-shadow:0 8px 24px rgba(107,15,26,0.3); display:flex; align-items:center; gap:16px; }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.page-header p { margin:4px 0 0; opacity:0.75; font-size:13px; }
+.btn-new { background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); border-radius:10px; padding:9px 20px; font-weight:700; cursor:pointer; text-decoration:none; font-size:14px; }
+.btn-new:hover { background:rgba(255,255,255,0.3); color:white; }
+.search-card { background:white; border-radius:12px; padding:14px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid var(--border); margin-bottom:18px; }
+.po-table th { background:#1e293b; color:white; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:10px 14px; }
+.po-table td { padding:10px 14px; font-size:13px; vertical-align:middle; }
+.po-table tr:hover { background:#f8fafc; }
+.po-num { background:#6b0f1a; color:white; border-radius:6px; padding:3px 10px; font-weight:700; font-size:13px; }
+
+/* Modal */
+.modal-card { border-radius:16px; border:none; overflow:hidden; }
+.modal-head { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; padding:20px 24px; }
+.modal-head h5 { margin:0; font-weight:800; font-size:18px; }
+.modal-head .po-sub { font-size:12px; opacity:0.75; margin-top:4px; }
+
+/* Tabs */
+.tab-switcher { display:flex; gap:0; background:#f1f5f9; border-radius:10px; padding:4px; margin-bottom:20px; }
+.tab-btn { flex:1; padding:9px; border:none; background:none; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; color:#64748b; transition:all 0.2s; }
+.tab-btn.active { background:white; color:#a91b2e; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+
+/* Maker search */
+.maker-search-wrap { position:relative; margin-bottom:16px; }
+.maker-search-wrap input { border:2px solid var(--border); border-radius:10px; padding:10px 16px; font-size:15px; font-weight:600; width:100%; }
+.maker-search-wrap input:focus { border-color:#a91b2e; outline:none; box-shadow:0 0 0 3px rgba(169,27,46,0.1); }
+.maker-dropdown { position:absolute; top:100%; left:0; right:0; background:white; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:999; max-height:220px; overflow-y:auto; display:none; }
+.maker-option { padding:10px 16px; cursor:pointer; font-size:14px; font-weight:600; }
+.maker-option:hover { background:#fff0f3; color:#a91b2e; }
+
+/* Products table */
+.products-tbl th { background:#f8fafc; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; padding:9px 12px; }
+.products-tbl td { padding:8px 12px; font-size:13px; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
+.products-tbl tr:hover { background:#fffbfb; }
+.qty-input { width:70px; border:2px solid var(--border); border-radius:6px; padding:4px 8px; text-align:center; font-weight:700; font-size:13px; }
+.qty-input:focus { border-color:#a91b2e; outline:none; }
+.price-input { width:90px; border:2px solid var(--border); border-radius:6px; padding:4px 8px; text-align:center; font-weight:700; font-size:13px; }
+.price-input:focus { border-color:#a91b2e; outline:none; }
+.check-select { width:18px; height:18px; accent-color:#a91b2e; cursor:pointer; }
+.stock-low { color:#ef4444; font-weight:700; }
+.stock-ok { color:#10b981; font-weight:700; }
+
+/* Lines table */
+.lines-tbl th { background:#1e293b; color:white; font-size:11px; text-transform:uppercase; padding:9px 12px; }
+.lines-tbl td { padding:8px 12px; font-size:13px; vertical-align:middle; }
+.grand-bar { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; border-radius:10px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+.grand-bar .label { font-size:13px; opacity:0.8; }
+.grand-bar .amount { font-size:22px; font-weight:800; }
+.btn-save { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; border:none; border-radius:10px; padding:11px 28px; font-weight:700; font-size:15px; cursor:pointer; box-shadow:0 4px 12px rgba(107,15,26,0.3); }
+.btn-save:hover { transform:translateY(-1px); }
+.btn-save:disabled { opacity:0.6; transform:none; }
+</style>
+
+<!-- Header -->
+<div class="page-header">
+    <div>
+        <h2>📋 Purchase Orders</h2>
+        <p>Manage supplier purchase orders</p>
+    </div>
+    <button class="btn-new ms-auto" onclick="newPO()">+ New Purchase Order</button>
+</div>
+
+<!-- Search -->
+<div class="search-card">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+        <input class="form-control" name="q" value="{{ search }}" placeholder="🔍 Search by PO number or maker..." style="max-width:300px;">
+        {% if all_batches %}
+        <select name="batch" class="form-select" style="max-width:220px;border-radius:8px;font-weight:700;font-size:13px;border:2px solid #e2e8f0;" onchange="this.form.submit()">
+            <option value="">📦 All Batches</option>
+            {% for b in all_batches %}
+            <option value="{{ b }}" {% if b == current_batch %}selected{% endif %}>🗂 {{ b }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+        <button class="btn btn-sm" style="background:#a91b2e;color:white;border-radius:8px;padding:8px 18px;font-weight:700;" type="submit">Search</button>
+        <a href="/dashboard/purchase-orders/" class="btn btn-sm btn-secondary" style="border-radius:8px;">All</a>
+    </form>
+    {% if current_batch %}
+    <div style="margin-top:10px; padding:8px 14px; background:#fff0f3; border-radius:8px; border:1px solid #ffd0d5; font-size:13px;">
+        🗂 Showing Batch <strong>{{ current_batch }}</strong> —
+        <a href="/dashboard/purchase-orders/" style="color:#a91b2e; font-weight:700;">Clear</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- View Tabs -->
+<div class="tab-switcher" style="margin-bottom:18px;">
+    <button class="tab-btn active" id="viewTabLines" onclick="switchViewTab('lines')">📋 By PO Line</button>
+    <button class="tab-btn" id="viewTabBatch" onclick="switchViewTab('batch')">🗂 By Batch</button>
+    <button class="tab-btn" id="viewTabMaker" onclick="switchViewTab('maker')">🏭 By Maker</button>
+</div>
+
+<!-- TAB: BY PO LINE -->
+<div id="viewLines">
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+    <div class="table-responsive">
+    <table class="table mb-0 po-table">
+        <thead>
+            <tr>
+                <th>PO #</th><th>SKU</th><th>Item</th><th>Maker</th>
+                <th class="text-center">Stock</th><th class="text-center">Qty</th>
+                <th class="text-center">Received</th>
+                <th class="text-center">Price (PKR)</th><th class="text-center">Total (PKR)</th>
+                <th class="text-center">Status</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for po in pos %}
+        <tr>
+            <td><span class="po-num" style="cursor:pointer;" onclick="openReceivePO({{ po.3 }})">{{ po.3 }}</span></td>
+            <td><span class="badge bg-secondary">{{ po.1 }}</span></td>
+            <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ po.5 }}">{{ po.5 }}</td>
+            <td>{{ po.7 }}</td>
+            <td class="text-center {% if po.8 <= 5 %}stock-low{% else %}stock-ok{% endif %}">{{ po.8 }}</td>
+            <td class="text-center fw-bold">{{ po.2 }}</td>
+            <td class="text-center" style="color:#0ea5e9; font-weight:700;">{{ po.10 }}</td>
+            <td class="text-center">{{ po.4 }}</td>
+            <td class="text-center fw-bold">{{ po.9 }}</td>
+            <td class="text-center">
+                {% if po.8 == "received" %}<span style="background:#dcfce7;color:#16a34a;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">✅ Received</span>
+                {% elif po.8 == "partial" %}<span style="background:#fef3c7;color:#d97706;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">🟠 Partial</span>
+                {% else %}<span style="background:#fee2e2;color:#ef4444;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">🟡 Pending</span>{% endif %}
+            </td>
+            <td style="white-space:nowrap;">
+                <button onclick="openReceivePO({{ po.3 }})" style="background:#e0f2fe;color:#0284c7;border:none;border-radius:7px;padding:4px 10px;font-weight:700;font-size:12px;cursor:pointer;">📥 Receive</button>
+                <button onclick="openEmailPO({{ po.3 }}, '{{ po.7|escapejs }}')" style="background:#dcfce7;color:#16a34a;border:none;border-radius:7px;padding:4px 10px;font-weight:700;font-size:12px;cursor:pointer;margin-left:4px;">📧 Email</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="11" class="text-center text-muted py-4">No purchase orders yet</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+</div>
+
+<!-- TAB: BY BATCH -->
+<div id="viewBatch" style="display:none;">
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+    <div class="table-responsive">
+    <table class="table mb-0 po-table">
+        <thead>
+            <tr>
+                <th>Batch ID</th><th>Date</th><th class="text-center">Makers</th>
+                <th class="text-center">PO Range</th><th class="text-center">Lines</th>
+                <th class="text-center">Total (PKR)</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for b in batch_groups %}
+        <tr>
+            <td><span class="po-num">{{ b.batch_id }}</span></td>
+            <td style="font-size:12px;color:#64748b;">
+                {{ b.date|slice:":4" }}-{{ b.date|slice:"4:6" }}-{{ b.date|slice:"6:8" }}
+                {% if b.date|length >= 12 %} {{ b.date|slice:"8:10" }}:{{ b.date|slice:"10:12" }}{% endif %}
+            </td>
+            <td class="text-center fw-bold">{{ b.makers }}</td>
+            <td class="text-center" style="font-size:12px;">
+                {% if b.first_po == b.last_po %}
+                    PO {{ b.first_po }}
+                {% else %}
+                    PO {{ b.first_po }} – {{ b.last_po }}
+                {% endif %}
+            </td>
+            <td class="text-center">{{ b.lines }}</td>
+            <td class="text-center fw-bold" style="color:#a91b2e;">PKR {{ b.total|floatformat:0 }}</td>
+            <td>
+                <a href="?batch={{ b.batch_id }}" class="btn btn-sm" style="background:#fff0f3;color:#a91b2e;border:1px solid #ffd0d5;border-radius:7px;font-weight:700;font-size:12px;">
+                    View Lines →
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No batches yet — batches are created when using Auto Generate</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+</div>
+
+<!-- TAB: BY MAKER -->
+<div id="viewMaker" style="display:none;">
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+    <div class="table-responsive">
+    <table class="table mb-0 po-table">
+        <thead>
+            <tr>
+                <th>Maker</th><th class="text-center">PO Count</th>
+                <th class="text-center">Total Lines</th><th class="text-center">Total (PKR)</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for m in maker_groups %}
+        <tr>
+            <td style="font-weight:700;">🏭 {{ m.maker }}</td>
+            <td class="text-center">{{ m.po_count }}</td>
+            <td class="text-center">{{ m.lines }}</td>
+            <td class="text-center fw-bold" style="color:#a91b2e;">PKR {{ m.total|floatformat:0 }}</td>
+            <td>
+                <a href="?q={{ m.maker }}" class="btn btn-sm" style="background:#fff0f3;color:#a91b2e;border:1px solid #ffd0d5;border-radius:7px;font-weight:700;font-size:12px;">
+                    View Lines →
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No purchase orders yet</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+</div>
+
+<script>
+function switchViewTab(tab) {
+    ['lines','batch','maker'].forEach(t => {
+        document.getElementById('viewTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+        document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
+    });
+    localStorage.setItem('poViewTab', tab);
+}
+// Restore last tab, or switch to batch tab if coming from a batch redirect
+window.addEventListener('DOMContentLoaded', () => {
+    {% if current_batch %}
+    switchViewTab('lines');
+    {% else %}
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('q')) {
+        switchViewTab('lines');
+    } else {
+        const saved = localStorage.getItem('poViewTab') || 'lines';
+        switchViewTab(saved);
+    }
+    {% endif %}
+});
+</script>
+
+<!-- Email PO Modal -->
+<div class="modal fade" id="emailPoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:14px; border:none; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#166534,#16a34a); padding:16px 22px; display:flex; align-items:center;">
+                <div style="color:white; font-size:16px; font-weight:800;">📧 Email PO to Maker</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px;">
+                    <strong>PO #<span id="emailPoNum"></span></strong> → <span id="emailPoMaker" style="color:#16a34a; font-weight:700;"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Additional Note (optional)</label>
+                    <textarea class="form-control" id="emailPoNote" rows="3" placeholder="e.g. Please deliver by end of month..."></textarea>
+                </div>
+                <div id="emailPoStatus" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn fw-bold text-white" onclick="sendEmailPO()" id="sendEmailBtn" style="background:linear-gradient(135deg,#166534,#16a34a);border:none;border-radius:8px;padding:8px 24px;">📧 Send Email</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let emailPoNumber = null;
+let emailPoMakerName = null;
+
+function openEmailPO(poNum, maker) {
+    emailPoNumber = poNum;
+    emailPoMakerName = maker;
+    document.getElementById('emailPoNum').textContent = poNum;
+    document.getElementById('emailPoMaker').textContent = maker;
+    document.getElementById('emailPoNote').value = '';
+    document.getElementById('emailPoStatus').style.display = 'none';
+    document.getElementById('sendEmailBtn').disabled = false;
+    document.getElementById('sendEmailBtn').textContent = '📧 Send Email';
+    new bootstrap.Modal(document.getElementById('emailPoModal')).show();
+}
+
+function sendEmailPO() {
+    const btn = document.getElementById('sendEmailBtn');
+    const note = document.getElementById('emailPoNote').value.trim();
+    const status = document.getElementById('emailPoStatus');
+    btn.disabled = true; btn.textContent = '⏳ Sending...';
+
+    fetch('/dashboard/purchase-orders/email-po/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({po_number: emailPoNumber, maker: emailPoMakerName, note: note})
+    })
+    .then(r => r.json())
+    .then(data => {
+        status.style.display = 'block';
+        if (data.success) {
+            status.innerHTML = '<div style="background:#dcfce7;color:#16a34a;border-radius:8px;padding:10px 14px;font-weight:700;">✅ Email sent to ' + data.sent_to + '</div>';
+            btn.textContent = '✅ Sent';
+        } else {
+            status.innerHTML = '<div style="background:#fee2e2;color:#ef4444;border-radius:8px;padding:10px 14px;font-weight:700;">❌ ' + (data.error || 'Unknown error') + '</div>';
+            btn.disabled = false; btn.textContent = '📧 Send Email';
+        }
+    })
+    .catch(() => {
+        status.style.display = 'block';
+        status.innerHTML = '<div style="background:#fee2e2;color:#ef4444;border-radius:8px;padding:10px 14px;">❌ Network error</div>';
+        btn.disabled = false; btn.textContent = '📧 Send Email';
+    });
+}
+</script>
+
+<!-- Receive PO Modal -->
+<div class="modal fade" id="receivePoModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:16px; border:none; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#0369a1,#0284c7); padding:18px 24px; display:flex; align-items:center;">
+                <div>
+                    <div style="color:#bae6fd; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase;">Stock Update</div>
+                    <div style="color:white; font-size:16px; font-weight:800;">📥 Receive Purchase Order <span id="receivePONum"></span></div>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="receivePoBody">
+                <div class="text-center text-muted py-4">Loading...</div>
+            </div>
+            <div style="padding:12px 20px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+                <div style="font-size:13px; color:#64748b; margin-right:auto;" id="receiveSummary"></div>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
+                <button type="button" class="btn btn-sm fw-bold px-4 text-white" onclick="saveReceive()" id="saveReceiveBtn" style="background:linear-gradient(135deg,#0369a1,#0284c7); border:none; border-radius:8px;">📥 Confirm Receive & Update Stock</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPONumber = null;
+let receiveLines = [];
+
+function openReceivePO(poNum) {
+    currentPONumber = poNum;
+    document.getElementById('receivePONum').textContent = '— PO ' + poNum;
+    document.getElementById('receivePoBody').innerHTML = '<div class="text-center text-muted py-4">⏳ Loading...</div>';
+    document.getElementById('receiveSummary').textContent = '';
+    new bootstrap.Modal(document.getElementById('receivePoModal')).show();
+
+    fetch('/dashboard/purchase-orders/receive/?po=' + poNum)
+        .then(r => r.json())
+        .then(data => {
+            receiveLines = data.lines || [];
+            renderReceiveLines();
+        })
+        .catch(() => {
+            document.getElementById('receivePoBody').innerHTML = '<div class="text-center text-danger py-4">Error loading PO</div>';
+        });
+}
+
+function renderReceiveLines() {
+    if (!receiveLines.length) {
+        document.getElementById('receivePoBody').innerHTML = '<div class="text-center text-muted py-4">No lines found for this PO</div>';
+        return;
+    }
+    let html = '<table class="table table-sm mb-0" style="font-size:13px;">';
+    html += `<thead style="background:#f1f5f9;"><tr>
+        <th style="padding:9px 14px;">SKU</th><th>Item</th><th>Maker</th>
+        <th class="text-center">Ordered</th><th class="text-center">Already Received</th>
+        <th class="text-center">Outstanding</th>
+        <th class="text-center" style="background:#e0f2fe;">Receive Now</th>
+        <th class="text-center">Status</th>
+    </tr></thead><tbody>`;
+
+    receiveLines.forEach((line, i) => {
+        const statusBadge = line.status === 'received'
+            ? '<span style="background:#dcfce7;color:#16a34a;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">✅ Received</span>'
+            : line.status === 'partial'
+            ? '<span style="background:#fef3c7;color:#d97706;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">🟠 Partial</span>'
+            : '<span style="background:#fee2e2;color:#ef4444;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">🟡 Pending</span>';
+
+        const outstanding = line.outstanding;
+        const disabled = outstanding <= 0 ? 'disabled style="opacity:0.4;"' : '';
+
+        html += `<tr>
+            <td style="padding:8px 14px;"><code>${line.sku}</code></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${line.title}">${line.title}</td>
+            <td style="font-size:12px;color:#64748b;">${line.maker}</td>
+            <td class="text-center fw-bold">${line.ordered_qty}</td>
+            <td class="text-center" style="color:#0ea5e9;font-weight:700;">${line.received_qty}</td>
+            <td class="text-center" style="color:${outstanding > 0 ? '#ef4444' : '#10b981'};font-weight:700;">${outstanding}</td>
+            <td class="text-center">
+                <input type="number" min="0" max="${outstanding}" value="${outstanding > 0 ? outstanding : 0}"
+                    id="recv_${i}" ${disabled}
+                    style="width:70px;border:2px solid #bae6fd;border-radius:6px;padding:3px 6px;text-align:center;font-weight:700;"
+                    oninput="updateReceiveSummary()">
+            </td>
+            <td class="text-center">${statusBadge}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('receivePoBody').innerHTML = html;
+    updateReceiveSummary();
+}
+
+function updateReceiveSummary() {
+    let total = 0;
+    receiveLines.forEach((line, i) => {
+        const inp = document.getElementById('recv_' + i);
+        if (inp && !inp.disabled) total += parseInt(inp.value) || 0;
+    });
+    document.getElementById('receiveSummary').textContent = total > 0 ? `${total} units will be added to stock` : '';
+}
+
+function saveReceive() {
+    const btn = document.getElementById('saveReceiveBtn');
+    const receives = [];
+    receiveLines.forEach((line, i) => {
+        const inp = document.getElementById('recv_' + i);
+        const qty = inp ? (parseInt(inp.value) || 0) : 0;
+        if (qty > 0) {
+            receives.push({sr: line.sr, received_qty: qty});
+        }
+    });
+    if (!receives.length) { alert('Enter at least one received quantity'); return; }
+    btn.disabled = true; btn.textContent = '⏳ Saving...';
+    fetch('/dashboard/purchase-orders/receive/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({receives})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('receivePoModal')).hide();
+            alert(`✅ ${data.updated} lines received — stock updated!`);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown'));
+            btn.disabled = false; btn.textContent = '📥 Confirm Receive & Update Stock';
+        }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; btn.textContent = '📥 Confirm Receive & Update Stock'; });
+}
+</script>
+
+<!-- PO Modal -->
+<div class="modal fade" id="poModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content modal-card">
+            <div class="modal-head">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h5>New Purchase Order</h5>
+                        <div class="po-sub">PO Number: <strong>{{ next_po }}</strong></div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4">
+
+                <!-- Tab Switcher -->
+                <div class="tab-switcher">
+                    <button class="tab-btn active" id="tabByMaker" onclick="switchTab('maker')">🏭 Order by Maker</button>
+                    <button class="tab-btn" id="tabBySKU" onclick="switchTab('sku')">🔍 Order by SKU</button>
+                </div>
+
+                <!-- BY MAKER TAB -->
+                <div id="makerTab">
+                    <div class="maker-search-wrap">
+                        <input type="text" id="makerInput" placeholder="Type maker name e.g. WARRIS..."
+                               oninput="filterMakers()" onkeydown="if(event.key==='Escape') closeMakerDD()">
+                        <div class="maker-dropdown" id="makerDropdown"></div>
+                    </div>
+                    <!-- Filter Toggle -->
+                    <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
+                        <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;">Show:</span>
+                        <button id="filterAll" class="btn btn-sm" style="background:#a91b2e;color:white;border-radius:7px;font-weight:700;font-size:12px;" onclick="setFilter('all')">All Items</button>
+                        <button id="filterReorder" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border-radius:7px;font-weight:700;font-size:12px;" onclick="setFilter('reorder')">⚠ Needs Reorder</button>
+                        <button class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border-radius:7px;font-weight:700;font-size:12px;margin-left:8px;" onclick="selectMaker('ALL_MAKERS')">🏭 All Makers</button>
+                    </div>
+
+                    <div id="makerProductsWrap" style="display:none;">
+                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                            <div style="font-size:14px; font-weight:700; color:#a91b2e;" id="makerTitle"></div>
+                            <button class="btn btn-sm" style="background:#a91b2e;color:white;border-radius:7px;font-weight:700;margin-left:auto;" onclick="addSelectedLines()">+ Add Selected to Order</button>
+                        </div>
+                        <div style="overflow:auto; max-height:320px; border:1px solid var(--border); border-radius:10px;">
+                            <table class="table mb-0 products-tbl">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" class="check-select" id="selectAll" onchange="toggleAll(this)"></th>
+                                        <th>SKU</th><th>Title</th>
+                                        <th class="text-center">Stock</th>
+                                        <th>Maker / Price</th>
+                                        <th class="text-center">Price (PKR)</th>
+                                        <th class="text-center">Qty</th>
+                                        <th>Size</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="makerProductsTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BY SKU TAB -->
+                <div id="skuTab" style="display:none;">
+                    <div class="p-3 mb-3 rounded" style="background:#fff0f3; border:2px solid #ffd0d5;">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">SKU</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control fw-bold" id="skuInput" placeholder="e.g. 1234"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();fetchSKU();}">
+                                    <button class="btn" style="background:#a91b2e;color:white;" onclick="fetchSKU()" type="button">Fetch</button>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">Title</label>
+                                <input type="text" class="form-control" id="itemTitle" readonly style="background:#f8f9fa;">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">Maker</label>
+                                <select class="form-select" id="itemMaker" onchange="skuMakerChanged()" style="font-size:13px;">
+                                    <option value="">— fetch SKU first —</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">Stock</label>
+                                <input type="text" class="form-control text-center" id="itemStock" readonly style="background:#f8f9fa;">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">Price</label>
+                                <input type="number" step="0.01" class="form-control" id="itemPrice" placeholder="0" oninput="updateLineTotal()">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">Qty</label>
+                                <input type="number" class="form-control" id="itemQty" value="1" min="1"
+                                    oninput="updateLineTotal()"
+                                    onkeydown="if(event.key==='Enter'){event.preventDefault();addSkuLine();}">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label fw-bold small text-uppercase" style="color:#a91b2e;">Size</label>
+                                <input type="text" class="form-control" id="itemSize" placeholder="-">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label small" style="color:transparent;">x</label>
+                                <div class="alert py-2 mb-0 text-center fw-bold" style="background:#fff0f3;color:#a91b2e;border:1px solid #ffd0d5;" id="lineTotal">0</div>
+                            </div>
+                            <div class="col-md-auto">
+                                <label class="form-label small" style="color:transparent;">x</label>
+                                <button class="btn d-block" style="background:#a91b2e;color:white;font-weight:700;" onclick="addSkuLine()" type="button">+ Add</button>
+                            </div>
+                        </div>
+                        <div id="fetchError" class="text-danger fw-bold mt-2 small" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- Lines Table (shared) -->
+                <div style="margin-top:16px;">
+                    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:8px;">Order Lines <span id="lineCount" style="color:#a91b2e;"></span></div>
+                    <div style="overflow:auto; border:1px solid var(--border); border-radius:10px;">
+                        <table class="table mb-0 lines-tbl">
+                            <thead>
+                                <tr><th>SKU</th><th>Item</th><th>Maker</th><th class="text-center">Stock</th><th class="text-center">Price</th><th class="text-center">Qty</th><th class="text-center">Total</th><th>Size</th><th></th></tr>
+                            </thead>
+                            <tbody id="linesBody">
+                                <tr id="emptyRow"><td colspan="9" class="text-center text-muted py-4">No lines added yet — use the tabs above to add items</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="grand-bar">
+                        <div><div class="label">Grand Total</div><div class="amount" id="grandTotal">PKR 0</div></div>
+                        <div style="text-align:right;"><div class="label" id="lineCountBar">0 items</div></div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--border);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn-save" onclick="savePO()" type="button" id="saveBtn">💾 Save Purchase Order</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const PO_NUMBER = {{ next_po }};
+let lines = [];
+let allMakers = [];
+let makerProducts = [];
+let currentMaker = '';
+let currentFilter = 'all';
+
+// Load makers on page load
+fetch('/dashboard/inventory/maker-products/ALL/')
+    .then(r => r.json())
+    .then(data => { allMakers = data.makers || []; })
+    .catch(() => {});
+
+function setFilter(f) {
+    currentFilter = f;
+    document.getElementById('filterAll').style.background = f === 'all' ? '#a91b2e' : '#f1f5f9';
+    document.getElementById('filterAll').style.color = f === 'all' ? 'white' : '#64748b';
+    document.getElementById('filterReorder').style.background = f === 'reorder' ? '#a91b2e' : '#f1f5f9';
+    document.getElementById('filterReorder').style.color = f === 'reorder' ? 'white' : '#64748b';
+    if (currentMaker) loadMakerProducts(currentMaker);
+}
+
+function newPO() {
+    lines = [];
+    renderLines();
+    document.getElementById('makerInput').value = '';
+    document.getElementById('makerProductsWrap').style.display = 'none';
+    switchTab('maker');
+    new bootstrap.Modal(document.getElementById('poModal')).show();
+    setTimeout(() => document.getElementById('makerInput').focus(), 400);
+}
+
+// TAB SWITCHING
+function switchTab(tab) {
+    document.getElementById('makerTab').style.display = tab === 'maker' ? 'block' : 'none';
+    document.getElementById('skuTab').style.display = tab === 'sku' ? 'block' : 'none';
+    document.getElementById('tabByMaker').classList.toggle('active', tab === 'maker');
+    document.getElementById('tabBySKU').classList.toggle('active', tab === 'sku');
+}
+
+// MAKER AUTOCOMPLETE
+function filterMakers() {
+    const val = document.getElementById('makerInput').value.trim().toLowerCase();
+    const dd = document.getElementById('makerDropdown');
+    if (!val) { dd.style.display = 'none'; return; }
+    const matches = allMakers.filter(m => m.toLowerCase().includes(val));
+    if (!matches.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = matches.slice(0, 10).map(m =>
+        `<div class="maker-option" onclick="selectMaker('${m.replace(/'/g,"\\'")}')"> ${m}</div>`
+    ).join('');
+    dd.style.display = 'block';
+}
+
+function closeMakerDD() {
+    document.getElementById('makerDropdown').style.display = 'none';
+}
+
+function selectMaker(name) {
+    document.getElementById('makerInput').value = name;
+    document.getElementById('makerDropdown').style.display = 'none';
+    loadMakerProducts(name);
+}
+
+function loadMakerProducts(name) {
+    currentMaker = name;
+    document.getElementById('makerProductsTbody').innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>';
+    document.getElementById('makerProductsWrap').style.display = 'block';
+    const label = name === 'ALL_MAKERS' ? '🏭 All Makers' : '🏭 ' + name;
+    document.getElementById('makerTitle').textContent = label + ' — Products';
+
+    const url = '/dashboard/inventory/maker-products/' + encodeURIComponent(name) + '/?filter=' + currentFilter;
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            makerProducts = data.items || [];
+            renderMakerProducts();
+        })
+        .catch(() => {
+            document.getElementById('makerProductsTbody').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Error loading products</td></tr>';
+        });
+}
+
+function renderMakerProducts() {
+    const tbody = document.getElementById('makerProductsTbody');
+    if (!makerProducts.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No products found for this maker</td></tr>';
+        return;
+    }
+    tbody.innerHTML = makerProducts.map((p, i) => {
+        const makerOptions = (p.makers || []).map(m => 
+            `<option value="${m.name}" data-price="${m.price}">${m.name} — PKR ${m.price.toLocaleString()}</option>`
+        ).join('');
+        return `<tr>
+            <td><input type="checkbox" class="check-select maker-check" data-idx="${i}"></td>
+            <td><code>${p.sku}</code></td>
+            <td style="max-width:180px;">${p.title}</td>
+            <td class="text-center ${p.stock <= 5 ? 'stock-low' : 'stock-ok'}">${p.stock}</td>
+            <td>
+                <select class="form-select form-select-sm" id="mp_maker_${i}" onchange="mpMakerChanged(${i})" style="font-size:12px;min-width:160px;">
+                    ${makerOptions}
+                </select>
+            </td>
+            <td class="text-center"><input type="number" class="price-input" id="mp_price_${i}" value="${p.price}" min="0" step="0.01"></td>
+            <td class="text-center"><input type="number" class="qty-input" id="mp_qty_${i}" value="1" min="1"></td>
+            <td><input type="text" class="form-control form-control-sm" id="mp_size_${i}" placeholder="-" style="width:80px;"></td>
+        </tr>`;
+    }).join('');
+}
+
+function toggleAll(cb) {
+    document.querySelectorAll('.maker-check').forEach(c => c.checked = cb.checked);
+}
+
+function mpMakerChanged(i) {
+    const sel = document.getElementById('mp_maker_' + i);
+    const opt = sel.options[sel.selectedIndex];
+    const price = opt.dataset.price;
+    if (price) document.getElementById('mp_price_' + i).value = parseFloat(price);
+}
+
+function addSelectedLines() {
+    const checks = document.querySelectorAll('.maker-check:checked');
+    if (!checks.length) { alert('Select at least one product'); return; }
+    checks.forEach(cb => {
+        const i = cb.dataset.idx;
+        const p = makerProducts[i];
+        const price = parseFloat(document.getElementById('mp_price_' + i).value) || 0;
+        const qty = parseInt(document.getElementById('mp_qty_' + i).value) || 1;
+        const size = document.getElementById('mp_size_' + i).value.trim();
+        const makerSel = document.getElementById('mp_maker_' + i);
+        const selectedMaker = makerSel ? makerSel.value : p.maker;
+        if (lines.find(l => l.sku == p.sku)) {
+            lines = lines.map(l => l.sku == p.sku ? {...l, qty: l.qty + qty} : l);
+        } else {
+            lines.push({sku: p.sku, title: p.title, maker: selectedMaker, stock: p.stock, price, qty, size});
+        }
+        cb.checked = false;
+    });
+    document.getElementById('selectAll').checked = false;
+    renderLines();
+}
+
+// BY SKU
+function fetchSKU() {
+    const sku = document.getElementById('skuInput').value.trim();
+    const err = document.getElementById('fetchError');
+    err.style.display = 'none';
+    if (!sku) { err.textContent = '⚠ Please enter a SKU'; err.style.display = 'block'; return; }
+    document.getElementById('itemTitle').value = 'Loading...';
+    fetch('/dashboard/inventory/sku-info/' + sku + '/')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { err.textContent = '⚠ ' + data.error; err.style.display = 'block'; document.getElementById('itemTitle').value = ''; return; }
+            document.getElementById('itemTitle').value = data.title;
+            document.getElementById('itemStock').value = data.stock !== null ? data.stock : '-';
+            // populate maker dropdown
+            const makerSel = document.getElementById('itemMaker');
+            makerSel.innerHTML = (data.makers || []).map(m =>
+                `<option value="${m.name}" data-price="${m.price}">${m.name} — PKR ${m.price.toLocaleString()}</option>`
+            ).join('');
+            if (data.makers && data.makers.length > 0) {
+                document.getElementById('itemPrice').value = data.makers[0].price;
+            } else {
+                document.getElementById('itemPrice').value = data.price > 0 ? data.price : '';
+            }
+            updateLineTotal();
+            document.getElementById('itemQty').focus();
+            document.getElementById('itemQty').select();
+        })
+        .catch(() => { err.textContent = '⚠ Network error'; err.style.display = 'block'; });
+}
+
+function skuMakerChanged() {
+    const sel = document.getElementById('itemMaker');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.dataset.price) {
+        document.getElementById('itemPrice').value = parseFloat(opt.dataset.price);
+        updateLineTotal();
+    }
+}
+
+function updateLineTotal() {
+    const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+    const qty = parseInt(document.getElementById('itemQty').value) || 0;
+    document.getElementById('lineTotal').textContent = (price * qty).toLocaleString() + ' PKR';
+}
+
+function addSkuLine() {
+    const sku = document.getElementById('skuInput').value.trim();
+    const title = document.getElementById('itemTitle').value;
+    const makerSelEl = document.getElementById('itemMaker');
+    const maker = makerSelEl.options[makerSelEl.selectedIndex] ? makerSelEl.options[makerSelEl.selectedIndex].value : '';
+    const stock = document.getElementById('itemStock').value;
+    const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+    const qty = parseInt(document.getElementById('itemQty').value) || 1;
+    const size = document.getElementById('itemSize').value.trim();
+    const err = document.getElementById('fetchError');
+    if (!sku || !title || title === 'Loading...') { err.textContent = '⚠ Fetch a SKU first'; err.style.display = 'block'; return; }
+    if (price <= 0) { err.textContent = '⚠ Enter a valid buy price'; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    if (lines.find(l => l.sku == sku)) {
+        lines = lines.map(l => l.sku == sku ? {...l, qty: l.qty + qty} : l);
+    } else {
+        lines.push({sku, title, maker, stock, price, qty, size});
+    }
+    renderLines();
+    ['skuInput','itemTitle','itemMaker','itemStock','itemPrice','itemSize'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('itemQty').value = '1';
+    document.getElementById('lineTotal').textContent = '0';
+    document.getElementById('skuInput').focus();
+}
+
+function removeLine(i) { lines.splice(i, 1); renderLines(); }
+
+function renderLines() {
+    const tbody = document.getElementById('linesBody');
+    if (!lines.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No lines added yet</td></tr>';
+        document.getElementById('grandTotal').textContent = 'PKR 0';
+        document.getElementById('lineCount').textContent = '';
+        document.getElementById('lineCountBar').textContent = '0 items';
+        return;
+    }
+    let grand = 0;
+    tbody.innerHTML = lines.map((l, i) => {
+        const total = l.price * l.qty;
+        grand += total;
+        return `<tr>
+            <td><code>${l.sku}</code></td>
+            <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${l.title}">${l.title}</td>
+            <td>${l.maker}</td>
+            <td class="text-center ${l.stock <= 5 ? 'stock-low' : 'stock-ok'}">${l.stock}</td>
+            <td class="text-center">${Number(l.price).toLocaleString()}</td>
+            <td class="text-center fw-bold">${l.qty}</td>
+            <td class="text-center fw-bold">${total.toLocaleString()} PKR</td>
+            <td>${l.size || '-'}</td>
+            <td><button class="btn btn-sm" style="background:#fee2e2;color:#ef4444;border:none;border-radius:6px;font-weight:700;" onclick="removeLine(${i})" type="button">✕</button></td>
+        </tr>`;
+    }).join('');
+    document.getElementById('grandTotal').textContent = 'PKR ' + grand.toLocaleString();
+    document.getElementById('lineCount').textContent = '(' + lines.length + ' lines)';
+    document.getElementById('lineCountBar').textContent = lines.length + ' item' + (lines.length !== 1 ? 's' : '');
+}
+
+function savePO() {
+    if (!lines.length) { alert('Add at least one line first'); return; }
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    fetch('/dashboard/purchase-orders/save/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({po_number: PO_NUMBER, lines: lines})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('poModal')).hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown'));
+            btn.disabled = false; btn.textContent = '💾 Save Purchase Order';
+        }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; btn.textContent = '💾 Save Purchase Order'; });
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+    if (!e.target.closest('.maker-search-wrap')) closeMakerDD();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+.po-table-wrap { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:20px; }
+.po-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+.po-table thead tr { background:#2c3e50; color:white; }
+.po-table th, .po-table td { padding:10px 12px; text-align:left; border-bottom:1px solid #e5e7eb; }
+.po-table tbody tr:hover { background:#f8fafc; }
+.d-flex.justify-content-between { flex-wrap:wrap; gap:10px; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">📋 Purchase Orders</h2>
+    <button class="btn btn-success" onclick="new bootstrap.Modal(document.getElementById('addModal')).show()">+ Add New</button>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <small class="text-muted">Total Items</small>
+            <h3 class="text-primary mb-0">{{ total_items }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <small class="text-muted">Total Quantity</small>
+            <h3 class="text-success mb-0">{{ total_qty }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 text-center">
+            <small class="text-muted">Total Value (PKR)</small>
+            <h3 class="text-warning mb-0">{{ total_value|floatformat:0 }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-3 mb-4">
+    <div class="row g-2">
+        <div class="col-md-5">
+            <form class="d-flex gap-2 flex-wrap" method="get">
+                <input class="form-control" name="q" value="{{ search }}" placeholder="Search SKU, item, maker...">
+                <input type="hidden" name="maker" value="{{ maker_filter }}">
+                <button class="btn btn-primary">Search</button>
+                <a href="/dashboard/purchase-orders-full/" class="btn btn-outline-secondary">Reset</a>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <form method="get">
+                <input type="hidden" name="q" value="{{ search }}">
+                <select class="form-select" name="maker" onchange="this.form.submit()">
+                    <option value="">All Makers</option>
+                    {% for m in makers %}
+                    <option value="{{ m }}" {% if m == maker_filter %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div>
+<div class="table-responsive">
+<table class="po-table">
+    <thead>
+        <tr>
+            <th>SKU</th><th>Item</th><th>Qty</th>
+            <th>Total (PKR)</th><th>Maker</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for po in pos %}
+    <tr>
+        <td><span class="badge bg-secondary">{{ po.1 }}</span></td>
+        <td>{{ po.5 }}</td>
+        <td><strong style="color:#2563eb;">{{ po.2 }}</strong></td>
+        <td><strong>{{ po.11|floatformat:0 }}</strong></td>
+        <td>{{ po.7 }}</td>
+        <td>
+            <div style="display:flex;gap:6px;">
+                <a href="/dashboard/purchase-orders-full/edit/{{ po.0 }}/" class="btn btn-sm btn-outline-primary">✏️</a>
+                <form method="post" action="/dashboard/purchase-orders-full/delete/{{ po.0 }}/" onsubmit="return confirm('Delete?')">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">🗑</button>
+                </form>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+    {% if not pos %}
+    <tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px;">No purchase orders found</td></tr>
+    {% endif %}
+    </tbody>
+</table>
+</div>
+</div>
+
+<script>
+
+</script>
+{% endblock %}

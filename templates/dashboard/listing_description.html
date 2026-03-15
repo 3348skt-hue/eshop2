@@ -1,0 +1,182 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+:root { --maroon:#a91b2e; --maroon-dark:#6b0f1a; --border:#e2e8f0; --surface:#f8fafc; --text:#1a1a2e; --muted:#64748b; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#8b1a2a,#a91b2e); color:white; padding:24px 32px; border-radius:14px; margin-bottom:24px; box-shadow:0 8px 32px rgba(107,15,26,0.3); }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.page-header p { margin:4px 0 0; opacity:0.75; font-size:13px; }
+.card2 { background:white; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.06); border:1px solid var(--border); margin-bottom:18px; overflow:hidden; }
+.card2-header { padding:13px 22px; border-bottom:1px solid var(--border); background:var(--surface); display:flex; align-items:center; gap:12px; }
+.step-num { width:30px; height:30px; border-radius:50%; background:var(--maroon); color:white; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.card2-header h5 { margin:0; font-size:15px; font-weight:700; }
+.card2-body { padding:22px; }
+.field-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:5px; display:block; }
+.field-input { border:2px solid var(--border); border-radius:10px; padding:10px 14px; font-size:15px; width:100%; transition:border-color 0.2s; font-family:inherit; box-sizing:border-box; }
+.field-input:focus { border-color:var(--maroon); outline:none; box-shadow:0 0 0 3px rgba(169,27,46,0.1); }
+.field-input[readonly] { background:var(--surface); color:var(--muted); }
+.btn-fetch { background:var(--maroon); color:white; border:none; border-radius:10px; padding:10px 22px; font-weight:700; font-size:15px; cursor:pointer; white-space:nowrap; }
+.btn-fetch:hover { background:var(--maroon-dark); }
+.btn-push { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; border:none; border-radius:10px; padding:12px 32px; font-weight:700; font-size:15px; cursor:pointer; box-shadow:0 4px 12px rgba(107,15,26,0.3); }
+.btn-push:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(107,15,26,0.4); }
+.alert-modern { border-radius:10px; padding:13px 18px; margin-bottom:18px; font-weight:600; border:none; font-size:14px; }
+.alert-modern.success { background:#d1fae5; color:#065f46; }
+.alert-modern.error { background:#fee2e2; color:#991b1b; }
+.results-table th { background:#6b0f1a; color:white; font-size:12px; text-transform:uppercase; padding:10px 14px; }
+.results-table td { padding:10px 14px; font-size:13px; }
+</style>
+
+<div class="page-header">
+    <h2>✏️ Update eBay Description</h2>
+    <p>Update title and measurement — pushes to all active eBay listings for that SKU</p>
+</div>
+
+{% if message %}
+<div class="alert-modern {% if 'Error' in message %}error{% else %}success{% endif %}">
+    {% if 'Error' in message %}⚠️{% else %}✅{% endif %} {{ message }}
+</div>
+{% endif %}
+
+<form method="post">
+{% csrf_token %}
+
+<!-- Step 1 SKU -->
+<div class="card2">
+    <div class="card2-header"><div class="step-num">1</div><h5>Enter SKU</h5></div>
+    <div class="card2-body">
+        <div class="d-flex gap-2" style="max-width:420px;">
+            <input type="text" class="field-input" name="sku"
+                   placeholder="e.g. 13530"
+                   value="{% if fetched_title %}{{ request.POST.sku }}{% endif %}"
+                   required style="font-size:18px;font-weight:700;letter-spacing:1px;">
+            <button class="btn-fetch" type="submit">Fetch →</button>
+        </div>
+    </div>
+</div>
+
+{% if fetched_title %}
+
+<!-- Step 2 Edit -->
+<div class="card2">
+    <div class="card2-header"><div class="step-num">2</div><h5>Edit Title &amp; Measurement</h5></div>
+    <div class="card2-body">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="field-label">Title</label>
+                <input type="text" class="field-input" name="custom_title" id="editTitle"
+                       value="{{ fetched_title }}" oninput="updatePreview()" maxlength="80">
+                <small class="text-muted">Max 80 chars — <span id="charCount">{{ fetched_title|length }}</span>/80</small>
+            </div>
+            <div class="col-md-4">
+                <label class="field-label">Measurement / Size</label>
+                <input type="text" class="field-input" name="size" id="editSize"
+                       placeholder="e.g. 23.5cm / 9 inches"
+                       oninput="updatePreview()" required>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Step 3 Preview -->
+<div class="card2">
+    <div class="card2-header">
+        <div class="step-num">3</div>
+        <h5>Live Preview</h5>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto;">Updates as you type</span>
+    </div>
+    <div class="card2-body">
+        <div style="max-width:680px;font-family:Arial,sans-serif;color:#1a1a2e;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#6b0f1a,#8b1a2a,#a91b2e);padding:24px 28px;">
+                <div style="color:#f5c6cb;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">MAK Supplies — Professional Grade</div>
+                <div id="prevTitle" style="color:#fff;font-size:20px;font-weight:700;line-height:1.3;margin-bottom:8px;">{{ fetched_title }}</div>
+                <div style="display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:4px;padding:3px 12px;color:#fff;font-size:12px;font-weight:600;">ISO Certified &nbsp;|&nbsp; CE Approved &nbsp;|&nbsp; Autoclavable</div>
+            </div>
+            <div style="background:#fff0f3;border-left:5px solid #a91b2e;padding:12px 18px;display:flex;align-items:center;gap:14px;">
+                <div style="font-size:26px;">📏</div>
+                <div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a91b2e;">Measurement</div>
+                    <div id="prevSize" style="font-size:20px;font-weight:800;color:#1a1a2e;">—</div>
+                </div>
+            </div>
+            <div style="padding:16px 18px;">
+                <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a91b2e;margin-bottom:8px;border-bottom:2px solid #a91b2e;padding-bottom:5px;">Specifications</div>
+                <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;font-size:13px;">
+                    <tr style="background:#fff0f3;"><td style="padding:9px 12px;font-weight:700;color:#6b0f1a;width:45%;border-bottom:1px solid #e2e8f0;">Material</td><td style="padding:9px 12px;border-bottom:1px solid #e2e8f0;">Premium Surgical Grade Stainless Steel</td></tr>
+                    <tr><td style="padding:9px 12px;font-weight:700;color:#6b0f1a;border-bottom:1px solid #e2e8f0;">Finishing</td><td style="padding:9px 12px;border-bottom:1px solid #e2e8f0;">Satin / Matt Finish</td></tr>
+                    <tr style="background:#fff0f3;"><td style="padding:9px 12px;font-weight:700;color:#6b0f1a;border-bottom:1px solid #e2e8f0;">Usage</td><td style="padding:9px 12px;border-bottom:1px solid #e2e8f0;">Reusable</td></tr>
+                    <tr><td style="padding:9px 12px;font-weight:700;color:#6b0f1a;border-bottom:1px solid #e2e8f0;">Autoclave Safe</td><td style="padding:9px 12px;font-weight:700;color:#15803d;border-bottom:1px solid #e2e8f0;">✓ Yes — Fully Sterilisable</td></tr>
+                    <tr style="background:#fff0f3;"><td style="padding:9px 12px;font-weight:700;color:#6b0f1a;">Certifications</td><td style="padding:9px 12px;">
+                        <span style="background:#6b0f1a;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;font-size:12px;margin-right:4px;">ISO</span>
+                        <span style="background:#6b0f1a;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;font-size:12px;">CE</span>
+                    </td></tr>
+                </table>
+                <div style="margin-top:12px;background:#fff8f8;border-radius:6px;padding:14px;border:1px solid #ffd0d5;font-size:13px;color:#334155;line-height:1.9;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a91b2e;margin-bottom:8px;">Quality Promise</div>
+                    ✅ Each instrument individually inspected for highest possible quality.<br>
+                    📦 Individually wrapped in protective bag, packed in secure box.<br>
+                    ⚡ <strong>Dispatched within 24 hours</strong> of cleared payment.<br>
+                    <span style="color:#a91b2e;font-weight:700;">Buy More, Save More!</span> Contact us via eBay for bulk discounts.
+                </div>
+                <div style="margin-top:12px;background:#f0fdf4;border-radius:6px;padding:14px;border:1px solid #bbf7d0;font-size:13px;color:#334155;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#15803d;margin-bottom:8px;">Shipping</div>
+                    🇮🇪 Ireland 2-3 days &nbsp;|&nbsp; 🇪🇺 EU 7-15 days &nbsp;|&nbsp; 🌍 Europe 10-20 days &nbsp;|&nbsp; 🌐 World 10-26 days
+                </div>
+                <div style="margin-top:12px;background:#fff7ed;border-radius:6px;padding:14px;border:1px solid #fed7aa;font-size:13px;color:#334155;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#c2410c;margin-bottom:6px;">Returns</div>
+                    Accepted within <strong>14 days</strong>. Original condition required. Return postage paid by us.
+                </div>
+            </div>
+            <div style="background:linear-gradient(135deg,#6b0f1a,#8b1a2a,#a91b2e);padding:20px 24px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#f5c6cb;margin-bottom:6px;">About MAK Supplies</div>
+                <p style="font-size:13px;color:#ffe0e4;margin:0 0 8px;line-height:1.6;">We specialise in manufacturing surgical, dental, veterinary and manicure instruments. ISO and CE certified. Direct manufacturer offering the highest quality with fast worldwide shipping.</p>
+                <div style="font-size:12px;color:#fca5a5;">ISO &amp; CE Certified &nbsp;|&nbsp; Direct Manufacturer &nbsp;|&nbsp; Fast Worldwide Shipping &nbsp;|&nbsp; 14-Day Returns</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="d-flex gap-3 align-items-center mb-4">
+    <a href="/dashboard/listings/" class="btn btn-secondary">← Back</a>
+    <button type="submit" name="do_update" value="1" class="btn-push ms-auto">
+        🚀 Push to eBay Listings
+    </button>
+</div>
+
+{% else %}
+<a href="/dashboard/listings/" class="btn btn-secondary">← Back to Listings</a>
+{% endif %}
+
+</form>
+
+{% if results %}
+<div class="card2">
+    <div class="card2-header"><div class="step-num">✓</div><h5>Results</h5></div>
+    <div style="overflow:auto;">
+        <table class="table mb-0 results-table">
+            <thead><tr><th class="ps-3">Site</th><th>Item ID</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for r in results %}
+            <tr class="{% if r.success %}table-success{% else %}table-danger{% endif %}">
+                <td class="ps-3 fw-bold">{{ r.site }}</td>
+                <td><code>{{ r.itemid }}</code></td>
+                <td>{{ r.status }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function updatePreview() {
+    const title = document.getElementById('editTitle').value;
+    const size = document.getElementById('editSize').value;
+    document.getElementById('prevTitle').textContent = title || '—';
+    document.getElementById('prevSize').textContent = size || '—';
+    document.getElementById('charCount').textContent = title.length;
+    document.getElementById('charCount').style.color = title.length > 70 ? '#ef4444' : '#64748b';
+}
+</script>
+{% endblock %}

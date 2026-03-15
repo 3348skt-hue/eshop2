@@ -1,3 +1,4 @@
+{% load image_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -509,6 +510,20 @@
                 max-width: 100%;
             }
         }
+
+        #mobileMenu a { display:block; color:white; padding:10px 20px; text-decoration:none; font-weight:500; }
+        #mobileMenu a:hover { background:rgba(255,255,255,0.1); }
+        @media (max-width: 576px) {
+            .hero-title { font-size: 1.8rem !important; }
+            .hero-subtitle { font-size: 1rem !important; }
+            .stat-number { font-size: 1.8rem !important; }
+            .hero-stats { gap: 20px !important; }
+            .section-title { font-size: 1.7rem !important; }
+            .search-container { max-width: 100% !important; }
+            .cart-btn { padding: 8px 14px !important; }
+            .navbar-brand { font-size: 1.4rem !important; }
+            .product-price { font-size: 1.4rem !important; }
+        }
     </style>
 </head>
 
@@ -519,11 +534,13 @@
     <div class="container">
         <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-3">
             <a class="navbar-brand" href="/">MAK Supplies</a>
+            <button class="d-md-none" onclick="document.getElementById('mobileMenu').classList.toggle('d-none')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:1.2rem;">☰</button>
 
             <div class="nav-links d-none d-md-flex">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/categories/" class="nav-link">Categories</a>
                 <a href="/products/" class="nav-link">All Products</a>
+                <a href="/orders/track-order/" class="nav-link">Track Order</a>
             </div>
 
             <div class="search-container">
@@ -538,14 +555,21 @@
                 </form>
             </div>
 
-            <a href="/cart/" class="cart-btn">
+            <a href="/cart/" class="cart-btn" id="cartNavBtn">
                 <i class="fas fa-shopping-cart cart-icon"></i>
                 <span>Cart</span>
+                <span id="cartBadge" style="background:#f4a261; color:white; border-radius:50%; width:20px; height:20px; font-size:0.75rem; display:none; align-items:center; justify-content:center; font-weight:700;">0</span>
             </a>
         </div>
     </div>
 </nav>
 
+<div id="mobileMenu" class="d-none" style="background:linear-gradient(135deg,#800020,#a0002a);padding:8px 0;">
+    <a href="/">Home</a>
+    <a href="/categories/">Categories</a>
+    <a href="/products/">All Products</a>
+    <a href="/orders/track-order/">Track Order</a>
+</div>
 <!-- HERO SECTION -->
 <section class="hero-section">
     <div class="container">
@@ -611,7 +635,7 @@
                     <a href="{% url 'product_detail' product.id %}" style="text-decoration: none;">
                         <div class="product-image-container">
                             {% if product.image %}
-                            <img src="{{ product.image.url }}" class="product-image" alt="{{ product.name }}">
+                            <img src="{{ product.image|image_src }}" class="product-image" alt="{{ product.name }}">
                             {% else %}
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f0f0f0' width='400' height='400'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='20'%3ENo Image%3C/svg%3E" class="product-image" alt="No image">
                             {% endif %}
@@ -662,32 +686,33 @@
                     <li><a href="/categories/">Categories</a></li>
                     <li><a href="/products/">All Products</a></li>
                     <li><a href="/cart/">Cart</a></li>
-                    <li><a href="/orders/lookup/">Track Order</a></li>
+                    
                 </ul>
             </div>
 
             <div class="footer-section">
                 <h4>Customer Service</h4>
                 <ul>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">Shipping Info</a></li>
-                    <li><a href="#">Returns</a></li>
-                    <li><a href="#">FAQ</a></li>
+                    <li><a href="/contact/">Contact Us</a></li>
+                    <li><a href="/shipping/">Shipping Info</a></li>
+                    <li><a href="/returns/">Returns</a></li>
+                    
                 </ul>
             </div>
 
             <div class="footer-section">
                 <h4>Contact</h4>
                 <ul>
-                    <li><i class="fas fa-envelope"></i> info@maksupplies.com</li>
-                    <li><i class="fas fa-phone"></i> +353 1 234 5678</li>
-                    <li><i class="fas fa-map-marker-alt"></i> Dublin, Ireland</li>
+                    <li><i class="fas fa-envelope"></i> 3348skt@gmail.com</li>
+                    <li><i class="fas fa-phone"></i> +353 86 0834385</li>
+                    <li><i class="fas fa-map-marker-alt"></i>30 Waterside View, Malahide Dublin, Ireland</li>
                 </ul>
             </div>
         </div>
 
         <div class="footer-bottom">
             <p>&copy; 2026 MAK Supplies. All rights reserved.</p>
+            <p>&copy; Registered in Ireland. Registration No.521781</p>
         </div>
     </div>
 </footer>
@@ -695,5 +720,18 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+fetch('/cart/data/')
+.then(function(r) { return r.json(); })
+.then(function(data) {
+    var total = 0;
+    for (var pid in data) { total += data[pid].qty; }
+    var badge = document.getElementById('cartBadge');
+    if (badge && total > 0) {
+        badge.textContent = total;
+        badge.style.display = 'flex';
+    }
+});
+</script>
 </body>
 </html>

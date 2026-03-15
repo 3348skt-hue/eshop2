@@ -1,3 +1,4 @@
+{% load image_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -564,7 +565,7 @@
             <div class="col-lg-6">
                 <div class="image-gallery-section">
                     <div class="main-image-container">
-                        <img src="{{ product.image.url }}" id="mainImage" class="main-image" alt="{{ product.name }}">
+                        <img src="{{ product.image|image_src }}" id="mainImage" class="main-image" alt="{{ product.name }}">
                         {% if product.stock > 10 %}
                         <span class="badge-stock">
                             <i class="fas fa-check-circle"></i> In Stock
@@ -581,7 +582,7 @@
                     </div>
 
                     <div class="thumbnail-gallery">
-                        <img src="{{ product.image.url }}" class="thumbnail active" onclick="changeImage(this.src, this)" alt="Thumbnail">
+                        <img src="{{ product.image|image_src }}" class="thumbnail active" onclick="changeImage(this.getAttribute("src"), this)" alt="Thumbnail">
                         <!-- Add more thumbnails here if you have multiple images -->
                     </div>
                 </div>
@@ -638,6 +639,11 @@
                     <div class="product-sku">
                         <i class="fas fa-barcode"></i> SKU: {{ product.sku }}
                     </div>
+                    {% if units_sold > 0 %}
+                    <div style="display:inline-flex; align-items:center; gap:8px; background:#fff3cd; color:#856404; padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.9rem; margin-bottom:20px;">
+                        <i class="fas fa-fire" style="color:#f39c12;"></i> {{ units_sold }} unit{{ units_sold|pluralize }} sold
+                    </div>
+                    {% endif %}
 
                     <!-- Product Description -->
                     <div class="product-description">
@@ -681,6 +687,7 @@
                         {% endif %}
                     </div>
 
+
                     <a href="javascript:history.back()" class="back-btn">
                         <i class="fas fa-arrow-left"></i>
                         Back to Products
@@ -688,21 +695,21 @@
 
                     <!-- Trust Badges -->
                     <div class="trust-section">
-                        <div class="trust-badge">
+                        <a href="/shipping/" class="trust-badge" style="text-decoration:none;">
                             <i class="fas fa-shipping-fast"></i>
                             <h6>Fast Shipping</h6>
                             <p>2-3 business days</p>
-                        </div>
+                        </a>
                         <div class="trust-badge">
                             <i class="fas fa-lock"></i>
                             <h6>Secure Payment</h6>
                             <p>SSL encrypted</p>
                         </div>
-                        <div class="trust-badge">
+                        <a href="/contact/" class="trust-badge" style="text-decoration:none;">
                             <i class="fas fa-headset"></i>
                             <h6>24/7 Support</h6>
                             <p>We're here to help</p>
-                        </div>
+                        </a>
                     </div>
 
                 </div>
@@ -734,7 +741,158 @@ document.getElementById('mainImage').addEventListener('click', function() {
     this.style.cursor = this.style.transform === 'scale(1.5)' ? 'zoom-in' : 'zoom-out';
     this.style.transform = this.style.transform === 'scale(1.5)' ? 'scale(1)' : 'scale(1.5)';
 });
+
+function showToast(msg) {
+    const toast = document.getElementById('cartToast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.style.display = 'flex';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+function addToCart(productId) {
+    fetch(`/cart/ajax-add/${productId}/`, {method: 'POST', headers: {'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '', 'Content-Type': 'application/json'}})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`✓ Added to cart!`);
+                document.getElementById('qtyControls').style.display = 'flex';
+                document.getElementById('qtyDisplay').textContent = data.quantity;
+                document.getElementById('addToCartBtn').innerHTML = '<i class="fas fa-check"></i> Added!';
+                document.getElementById('addToCartBtn').style.background = '#27ae60';
+                setTimeout(() => {
+                    document.getElementById('addToCartBtn').innerHTML = '<i class="fas fa-cart-plus"></i> Add More';
+                    document.getElementById('addToCartBtn').style.background = '';
+                }, 2000);
+            }
+        });
+}
+
+function updateCart(productId, action) {
+    fetch(`/cart/ajax-update/${productId}/${action}/`, {method: 'POST', headers: {'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '', 'Content-Type': 'application/json'}})
+        .then(r => r.json())
+        .then(data => {
+            if (data.quantity === 0) {
+                document.getElementById('qtyControls').style.display = 'none';
+                document.getElementById('addToCartBtn').innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
+                document.getElementById('addToCartBtn').style.background = '';
+                showToast('Removed from cart');
+            } else {
+                document.getElementById('qtyDisplay').textContent = data.quantity;
+            }
+        });
+}
+
+function removeFromCart(productId) {
+    updateCart(productId, 'decrease');
+    fetch(`/cart/ajax-update/${productId}/decrease/`, {method: 'POST', headers: {'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '', 'Content-Type': 'application/json'}})
+        .then(r => r.json())
+        .then(() => {
+            document.getElementById('qtyControls').style.display = 'none';
+            document.getElementById('addToCartBtn').innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
+            document.getElementById('addToCartBtn').style.background = '';
+            showToast('Removed from cart');
+        });
+}
 </script>
 
+
+<div id="cartPopup" style="display:none; position:fixed; top:70px; right:20px; z-index:9999; width:300px; background:white; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 8px 30px rgba(0,0,0,0.15); overflow:hidden;">
+  <div style="background:#800020; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+    <span style="color:white; font-size:13px; font-weight:600;" id="popupTitle">Your cart</span>
+    <span onclick="closeCartPopup()" style="color:rgba(255,255,255,0.7); font-size:16px; cursor:pointer; line-height:1;">&times;</span>
+  </div>
+  <div id="popupItems" style="max-height:280px; overflow-y:auto;"></div>
+  <div style="padding:10px 14px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-size:13px; font-weight:600;">Total</span>
+    <span style="font-size:15px; font-weight:700; color:#800020;" id="popupTotal">€0.00</span>
+  </div>
+  <div style="padding:0 14px 14px;">
+    <a href="/cart/" style="display:block; text-align:center; background:#800020; color:white; padding:10px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">Go to Cart &rarr;</a>
+  </div>
+</div>
+<script>
+var cartData = {};
+var popupTimer;
+
+function showCartPopup(highlightId) {
+  clearTimeout(popupTimer);
+  var popup = document.getElementById('cartPopup');
+  var items = document.getElementById('popupItems');
+  var total = 0;
+  var html = '';
+  var count = 0;
+  for (var pid in cartData) {
+    var item = cartData[pid];
+    var subtotal = item.price * item.qty;
+    total += subtotal;
+    count += item.qty;
+    var highlight = (pid == highlightId) ? 'background:#fff8f0;' : '';
+    html += '<div style="padding:10px 14px; border-bottom:1px solid #f5f5f5;' + highlight + '">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">';
+    html += '<span style="font-size:12px; color:#333; flex:1; padding-right:8px;">' + item.name + '</span>';
+    html += '<span style="font-size:12px; font-weight:700; color:#800020;">&euro;' + subtotal.toFixed(2) + '</span>';
+    html += '</div>';
+    html += '<div style="display:flex; align-items:center; gap:6px;">';
+    html += '<span style="font-size:11px; color:#999;">SKU: ' + item.sku + '</span>';
+    html += '<div style="margin-left:auto; display:flex; align-items:center; gap:5px;">';
+    html += '<button onclick="popupUpdate(' + pid + ','decrease')" style="width:22px;height:22px;border-radius:50%;border:1.5px solid #800020;background:white;color:#800020;font-weight:700;cursor:pointer;font-size:14px;padding:0;line-height:1;">-</button>';
+    html += '<span style="font-size:13px; font-weight:700; color:#800020; min-width:18px; text-align:center;">' + item.qty + '</span>';
+    html += '<button onclick="popupUpdate(' + pid + ','increase')" style="width:22px;height:22px;border-radius:50%;border:none;background:#800020;color:white;font-weight:700;cursor:pointer;font-size:14px;padding:0;line-height:1;">+</button>';
+    html += '</div></div></div>';
+  }
+  if (!html) html = '<div style="padding:20px; text-align:center; color:#999; font-size:13px;">Your cart is empty</div>';
+  items.innerHTML = html;
+  document.getElementById('popupTotal').textContent = '€' + total.toFixed(2);
+  document.getElementById('popupTitle').textContent = 'Your cart (' + count + ' item' + (count !== 1 ? 's' : '') + ')';
+  popup.style.display = 'block';
+  popupTimer = setTimeout(closeCartPopup, 6000);
+}
+
+function closeCartPopup() {
+  document.getElementById('cartPopup').style.display = 'none';
+}
+
+function popupUpdate(productId, action) {
+  clearTimeout(popupTimer);
+  var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+  fetch('/cart/ajax-update/' + productId + '/' + action + '/', {method:'POST', headers:{'X-CSRFToken': csrfToken, 'Content-Type':'application/json'}})
+  .then(r => r.json())
+  .then(data => {
+    if (cartData[productId]) {
+      if (data.quantity === 0) {
+        delete cartData[productId];
+      } else {
+        cartData[productId].qty = data.quantity;
+      }
+    }
+    showCartPopup(productId);
+  });
+}
+
+var _origAddToCart = addToCart;
+addToCart = function(productId) {
+  var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+  fetch('/cart/ajax-add/' + productId + '/', {method:'POST', headers:{'X-CSRFToken': csrfToken, 'Content-Type':'application/json'}})
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      if (!cartData[productId]) {
+        cartData[productId] = {name: data.product_name, qty: data.quantity, price: 0, sku: ''};
+      } else {
+        cartData[productId].qty = data.quantity;
+      }
+      showCartPopup(productId);
+      document.getElementById('qtyControls').style.display = 'flex';
+      document.getElementById('qtyDisplay').textContent = data.quantity;
+      document.getElementById('addToCartBtn').innerHTML = '<i class="fas fa-check"></i> Added!';
+      document.getElementById('addToCartBtn').style.background = '#27ae60';
+      setTimeout(() => {
+        document.getElementById('addToCartBtn').innerHTML = '<i class="fas fa-cart-plus"></i> Add More';
+        document.getElementById('addToCartBtn').style.background = '';
+      }, 2000);
+    }
+  });
+};
+</script>
 </body>
 </html>

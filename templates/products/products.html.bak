@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Products - MAK Supplies</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #800020;
+            --secondary-color: #a0002a;
+            --accent-color: #f4a261;
+            --dark: #1a1a1a;
+            --light-bg: #f8f9fa;
+            --text-dark: #2c3e50;
+            --border-color: #e8e8e8;
+            --success: #27ae60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* NAVBAR STYLING */
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white !important;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: white !important;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-link:hover {
+            border-bottom-color: var(--accent-color);
+        }
+
+        .nav-link.active {
+            border-bottom-color: white;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--accent-color);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #e89452;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .cart-btn {
+            background: white;
+            color: var(--primary-color);
+            padding: 10px 25px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .cart-icon {
+            font-size: 1.2rem;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb-section {
+            background: white;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .breadcrumb {
+            background: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-dark);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 40px 0;
+        }
+
+        /* CATEGORY SIDEBAR */
+        .category-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: sticky;
+            top: 100px;
+            margin-bottom: 30px;
+        }
+
+        .category-header {
+            background: var(--dark);
+            padding: 20px;
+        }
+
+        .category-header a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .category-item {
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .category-item:last-child {
+            border-bottom: none;
+        }
+
+        .category-item:hover {
+            background: var(--light-bg);
+        }
+
+        .category-item.active {
+            background: var(--light-bg);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .category-name {
+            padding: 18px 20px;
+            font-weight: 500;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+        }
+
+        .category-name:hover {
+            color: var(--primary-color);
+        }
+
+        .category-name i {
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .subcategory-dropdown {
+            display: none;
+            background: var(--light-bg);
+            padding: 10px 0;
+        }
+
+        .category-item:hover .subcategory-dropdown,
+        .category-item.active .subcategory-dropdown {
+            display: block;
+        }
+
+        .subcategory-link {
+            display: block;
+            padding: 10px 20px 10px 40px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .subcategory-link:hover {
+            color: var(--primary-color);
+            padding-left: 45px;
+        }
+
+        .subcategory-link.active {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* FILTER SECTION */
+        .filter-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .filter-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .filter-option label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* PRODUCTS SECTION */
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+
+        .products-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .products-count {
+            color: #888;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        .sort-filter-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+            background: var(--light-bg);
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-dark);
+        }
+
+        .view-btn.active {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .sort-select {
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        /* PRODUCT GRID */
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .product-image-container {
+            position: relative;
+            overflow: hidden;
+            padding-top: 100%;
+            background: var(--light-bg);
+        }
+
+        .product-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.1);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            left: 5%;
+            background: #800000;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* STOCK QUANTITY BADGE - NEW */
+        .stock-badge {
+            position: absolute;
+            top: 10px;
+            right: 5%;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--success);
+        }
+
+        .stock-badge.low-stock {
+            background: #f39c12;
+        }
+
+        .stock-badge.out-of-stock {
+            background: #e74c3c;
+        }
+
+        .product-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: #888;
+            flex-wrap: wrap;
+        }
+
+        .product-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .product-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .product-sku {
+            display: inline-block;
+            background: var(--light-bg);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        /* STOCK INFO IN PRODUCT BODY - NEW */
+        .stock-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stock-info.in-stock {
+            color: var(--success);
+        }
+
+        .stock-info.low-stock {
+            color: #f39c12;
+        }
+
+        .stock-info.out-of-stock {
+            color: #e74c3c;
+        }
+
+        .stock-info i {
+            font-size: 1rem;
+        }
+
+        .product-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+
+        .add-to-cart-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: auto;
+            text-decoration: none;
+        }
+
+        .add-to-cart-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 95, 122, 0.3);
+            color: white;
+        }
+
+        .add-to-cart-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .add-to-cart-btn:disabled:hover {
+            background: #ccc;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* PAGINATION */
+        .pagination-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .page-link {
+            padding: 10px 18px;
+            border: 1px solid var(--border-color);
+            background: white;
+            color: var(--text-dark);
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .page-link:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .page-link.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .page-link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-link.disabled:hover {
+            background: white;
+            color: var(--text-dark);
+            border-color: var(--border-color);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #888;
+        }
+
+        /* FOOTER */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h4 {
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 20px;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .products-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .sort-filter-section {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sort-select {
+                width: 100%;
+            }
+
+            .category-card {
+                position: relative;
+                top: 0;
+            }
+
+            .navbar-custom .container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-container {
+                max-width: 100%;
+            }
+
+            .stock-badge {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar-custom">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-3">
+            <a class="navbar-brand" href="/">MAK Supplies</a>
+
+            <div class="nav-links d-none d-md-flex">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/categories/" class="nav-link">Categories</a>
+                <a href="/products/" class="nav-link active">All Products</a>
+            </div>
+
+            <div class="search-container">
+                <form method="get" action="/products/">
+                    {% if selected_category %}
+                    <input type="hidden" name="category" value="{{ selected_category }}">
+                    {% endif %}
+                    {% if selected_subcategory %}
+                    <input type="hidden" name="subcategory" value="{{ selected_subcategory }}">
+                    {% endif %}
+                    <input class="search-input"
+                           type="search"
+                           name="q"
+                           placeholder="Search for medical equipment..."
+                           value="{{ query|default:'' }}">
+                    <button class="search-btn" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+
+            <a href="/cart/" class="cart-btn">
+                <i class="fas fa-shopping-cart cart-icon"></i>
+                <span>Cart</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Products</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+    <div class="container">
+        <div class="row">
+
+            <!-- CATEGORIES SIDEBAR -->
+            <div class="col-lg-3 col-md-4">
+                <!-- FILTERS -->
+                <div class="filter-card">
+                    <div class="filter-title">
+                        <i class="fas fa-filter"></i>
+                        Stock Filters
+                    </div>
+                    <div class="filter-options">
+                        <div class="filter-option">
+                            <input type="checkbox" id="in-stock" {% if stock_filter == 'in-stock' %}checked{% endif %}>
+                            <label for="in-stock">In Stock Only</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="out-of-stock" {% if stock_filter == 'out-of-stock' %}checked{% endif %}>
+                            <label for="out-of-stock">Out of Stock</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-header">
+                        <a href="/products/">
+                            <i class="fas fa-th-large"></i>
+                            All Categories
+                        </a>
+                    </div>
+
+                    <ul class="category-list">
+                        {% for category in categories %}
+                        <li class="category-item {% if category.id == selected_category %}active{% endif %}">
+                            <a href="/products/?category={{ category.id }}" class="category-name">
+                                {{ category.name }}
+                                {% if category.subcategories.all %}
+                                <i class="fas fa-chevron-right"></i>
+                                {% endif %}
+                            </a>
+
+                            {% if category.subcategories.all %}
+                            <div class="subcategory-dropdown">
+                                {% for sub in category.subcategories.all %}
+                                <a href="/products/?subcategory={{ sub.id }}"
+                                   class="subcategory-link {% if sub.id == selected_subcategory %}active{% endif %}">
+                                    {{ sub.name }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PRODUCTS GRID -->
+            <div class="col-lg-9 col-md-8">
+                <div class="products-header">
+                    <div>
+                        <h2 class="products-title">
+                            {% if query %}
+                                Search Results for "{{ query }}"
+                            {% elif selected_category_name %}
+                                {{ selected_category_name }}
+                            {% else %}
+                                All Products
+                            {% endif %}
+                        </h2>
+                        <p class="products-count">Showing {{ products|length }} of {{ total_products }} products</p>
+                    </div>
+
+                    <div class="sort-filter-section">
+                        <div class="view-toggle">
+                            <button class="view-btn active" title="Grid View">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="view-btn" title="List View">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+
+                        <select class="sort-select" onchange="location = this.value;">
+                            <option value="?sort=featured">Sort by: Featured</option>
+                            <option value="?sort=price-low">Price: Low to High</option>
+                            <option value="?sort=price-high">Price: High to Low</option>
+                            <option value="?sort=name">Name: A to Z</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    {% for product in products %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="product-card">
+                            <a href="{% url 'product_detail' product.id %}" style="text-decoration: none;">
+                                <div class="product-image-container">
+                                    {% if product.image %}
+                                    <img src="{% if "http" in product.image.name %}{{ product.image.name }}{% else %}{{ product.image.url }}{% endif %}" class="product-image" alt="{{ product.name }}">
+                                    {% else %}
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f0f0f0' width='400' height='400'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='20'%3ENo Image%3C/svg%3E" class="product-image" alt="No image">
+                                    {% endif %}
+
+                                    <!-- Status Badge (Left) -->
+                                    <span class="product-badge">
+                                        {% if product.stock > 0 %}
+                                            In Stock
+                                        {% else %}
+                                            Out of Stock
+                                        {% endif %}
+                                    </span>
+
+                                    <!-- Stock Quantity Badge (Right) - NEW -->
+
+                                </div>
+                            </a>
+
+                            <div class="product-body">
+                                <div class="product-meta">
+                                    <span><i class="fas fa-folder"></i> {{ product.category.name }}</span>
+                                    {% if product.store %}
+                                    <span><i class="fas fa-store"></i> {{ product.store.name }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <h3 class="product-title">{{ product.name }}</h3>
+
+                                <span class="product-sku">SKU: {{ product.sku }}</span>
+
+                                <!-- Stock Info in Product Body - NEW -->
+                                {% if product.stock > 10 %}
+                                    <div class="stock-info in-stock">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>{{ product.stock }} available</span>
+                                    </div>
+                                {% elif product.stock > 0 %}
+                                    <div class="stock-info low-stock">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span>Low stock - only {{ product.stock }} left!</span>
+                                    </div>
+                                {% else %}
+                                    <div class="stock-info out-of-stock">
+                                        <i class="fas fa-ban"></i>
+                                        <span>Currently unavailable</span>
+                                    </div>
+                                {% endif %}
+
+                                <div class="product-price">€{{ product.price }}</div>
+
+                                {% if product.stock > 0 %}
+                                    <a href="/cart/add/{{ product.id }}/" class="add-to-cart-btn">
+                                        <i class="fas fa-cart-plus"></i>
+                                        Add to Cart
+                                    </a>
+                                {% else %}
+                                    <button class="add-to-cart-btn" disabled>
+                                        <i class="fas fa-ban"></i>
+                                        Out of Stock
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <h3>No Products Found</h3>
+                            <p>Try adjusting your search or browse our categories</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- PAGINATION -->
+                {% if is_paginated %}
+                <div class="pagination-section">
+                    <div class="pagination">
+                        {% if page_obj.has_previous %}
+                        <a href="?page=1" class="page-link">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}" class="page-link">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                        {% else %}
+                        <span class="page-link disabled">
+                            <i class="fas fa-angle-double-left"></i>
+                        </span>
+                        <span class="page-link disabled">
+                            <i class="fas fa-angle-left"></i>
+                        </span>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="page-link active">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="page-link">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                        {% else %}
+                        <span class="page-link disabled">
+                            <i class="fas fa-angle-right"></i>
+                        </span>
+                        <span class="page-link disabled">
+                            <i class="fas fa-angle-double-right"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About MAK Supplies</h4>
+                <p>Your trusted source for premium medical equipment and surgical instruments. Quality products, fast shipping, exceptional service.</p>
+            </div>
+
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/categories/">Categories</a></li>
+                    <li><a href="/products/">All Products</a></li>
+                    <li><a href="/cart/">Cart</a></li>
+                    <li><a href="/orders/lookup/">Track Order</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Customer Service</h4>
+                <ul>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Shipping Info</a></li>
+                    <li><a href="#">Returns</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <ul>
+                    <li><i class="fas fa-envelope"></i> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ce5e2eae3cce1ede7fff9fcfce0e5e9ffa2efe3e1">[email&#160;protected]</a></li>
+                    <li><i class="fas fa-phone"></i> +353 1 234 5678</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Dublin, Ireland</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 MAK Supplies. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Stock filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const inStockCheckbox = document.getElementById('in-stock');
+        const outOfStockCheckbox = document.getElementById('out-of-stock');
+
+        function updateStockFilter() {
+            // Get current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Only one can be checked at a time
+            if (this.id === 'in-stock' && this.checked) {
+                outOfStockCheckbox.checked = false;
+                urlParams.set('stock', 'in-stock');
+            } else if (this.id === 'out-of-stock' && this.checked) {
+                inStockCheckbox.checked = false;
+                urlParams.set('stock', 'out-of-stock');
+            } else {
+                urlParams.delete('stock');
+            }
+
+            // Remove page parameter to go back to page 1 after filtering
+            urlParams.delete('page');
+
+            // Redirect to updated URL
+            window.location.search = urlParams.toString();
+        }
+
+        if (inStockCheckbox) {
+            inStockCheckbox.addEventListener('change', updateStockFilter);
+        }
+        if (outOfStockCheckbox) {
+            outOfStockCheckbox.addEventListener('change', updateStockFilter);
+        }
+    });
+</script>
+
+</body>
+</html>

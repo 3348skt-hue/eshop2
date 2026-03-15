@@ -1,0 +1,78 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/dashboard/inventory/" class="btn btn-outline-secondary">← Back</a>
+    <h2 class="mb-0">📤 Bulk Inventory Upload</h2>
+</div>
+
+{% if message %}
+<div class="alert {% if 'successfully' in message %}alert-success{% else %}alert-warning{% endif %}">
+    {{ message }}
+</div>
+{% endif %}
+
+{% if errors %}
+<div class="alert alert-danger">
+    <strong>Errors:</strong>
+    <ul class="mb-0">
+    {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h5>Upload CSV File</h5>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <input type="file" class="form-control" name="csv_file" accept=".csv" required>
+                </div>
+                <button class="btn btn-success w-100">📤 Upload & Import</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4">
+            <h5>CSV Format Guide</h5>
+            <p class="text-muted small">Your CSV must have these column headers:</p>
+            <div class="table-responsive">
+            <table class="table table-sm table-bordered small">
+                <thead class="table-dark">
+                    <tr><th>Column</th><th>Required</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>sku</td><td>✅</td><td>13530</td></tr>
+                    <tr><td>title</td><td>✅</td><td>MAK Eye Scissor</td></tr>
+                    <tr><td>price</td><td>✅</td><td>12.50</td></tr>
+                    <tr><td>stock</td><td>✅</td><td>100</td></tr>
+                    <tr><td>opening</td><td>✅</td><td>100</td></tr>
+                    <tr><td>reorder</td><td>✅</td><td>10</td></tr>
+                    <tr><td>weight</td><td>✅</td><td>150</td></tr>
+                    <tr><td>postage</td><td>✅</td><td>3.50</td></tr>
+                    <tr><td>maker</td><td>✅</td><td>ASGHAR</td></tr>
+                    <tr><td class="text-success fw-bold">photo</td><td>⭐</td><td>https://...</td></tr>
+                    <tr><td class="text-success fw-bold">catid</td><td>⭐</td><td>185166</td></tr>
+                    <tr><td class="text-success fw-bold">storecat</td><td>⭐</td><td>Medical Shop/Surgical</td></tr>
+                    <tr><td class="text-primary fw-bold">polish</td><td>⭐</td><td>25</td></tr>
+                    <tr><td class="text-primary fw-bold">packing</td><td>⭐</td><td>30</td></tr>
+                    <tr><td class="text-primary fw-bold">freight</td><td>⭐</td><td>15</td></tr>
+                </tbody>
+            </table>
+            </div>
+            <div class="alert alert-info small mt-2 mb-0">
+                💡 Existing SKUs will be <strong>updated</strong>. New SKUs will be <strong>inserted</strong>.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-4 mt-4">
+    <h5>Sample CSV</h5>
+    <pre class="bg-light p-3 rounded small">sku,title,price,stock,opening,reorder,weight,postage,maker,photo,catid,storecat,polish,packing,freight
+13530,MAK Eye Scissor IRIS,12.50,100,100,10,150,3.50,ASGHAR,https://photo.url,185166,Medical Shop/Surgical,25,30,15
+13531,MAK Needle Holder,15.00,50,50,5,200,3.50,ASGHAR,https://photo.url,185166,Medical Shop/Surgical,20,30,15</pre>
+    <a href="/dashboard/inventory/csv/" class="btn btn-outline-dark btn-sm">⬇️ Download Current Inventory as CSV</a>
+</div>
+{% endblock %}

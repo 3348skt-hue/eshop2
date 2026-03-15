@@ -1,0 +1,38 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h2 class="mb-4">eBay Listings Management</h2>
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <h1>📦</h1>
+            <h5>Stock Update</h5>
+            <p class="text-muted">Update stock quantity on all eBay sites for a SKU</p>
+            <a href="/dashboard/listings/stock/" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <h1>💰</h1>
+            <h5>Price Update</h5>
+            <p class="text-muted">Set EUR price and auto-convert to all currencies</p>
+            <a href="/dashboard/listings/price/" class="btn btn-danger">Open</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <h1>📝</h1>
+            <h5>Description Update</h5>
+            <p class="text-muted">Update size and description on all eBay sites for a SKU</p>
+            <a href="/dashboard/listings/description/" class="btn btn-warning">Open</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <h1>🆕</h1>
+            <h5>Create New Listing</h5>
+            <p class="text-muted">List a product on eBay Ireland, UK, USA, Canada, Australia</p>
+            <a href="/dashboard/listings/create/" class="btn btn-success">Open</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

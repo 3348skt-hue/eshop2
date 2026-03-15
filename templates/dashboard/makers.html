@@ -1,0 +1,289 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+@media (max-width: 767px) {
+    .page-header { flex-direction:column; align-items:flex-start; gap:10px; }
+    .page-title { font-size:1.2rem !important; }
+    thead th, tbody td { font-size:0.72rem !important; padding:7px 8px !important; white-space:nowrap; }
+    .search-bar input { max-width:100% !important; }
+    .action-btn { padding:4px 7px !important; font-size:0.7rem !important; }
+    .stats-row { grid-template-columns:repeat(3,1fr) !important; }
+}
+</style>
+
+
+<style>
+:root { --primary:#2563eb; --border:#e5e7eb; --gray:#6b7280; }
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+.page-title { font-size:1.5rem; font-weight:700; color:#111; margin:0; }
+.btn { border:none; border-radius:8px; padding:9px 18px; font-size:.85rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .15s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:#1d4ed8; }
+.btn-secondary { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+.stat-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 18px; text-align:center; }
+.stat-card .val { font-size:1.8rem; font-weight:800; color:var(--primary); line-height:1; }
+.stat-card .lbl { font-size:0.7rem; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+.table-wrap { background:#fff; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+table { width:100%; border-collapse:collapse; font-size:.875rem; }
+thead tr { background:#1e293b; color:#fff; }
+thead th { padding:12px 14px; text-align:left; font-weight:600; font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+tbody tr { border-bottom:1px solid var(--border); transition:background .1s; cursor:pointer; }
+tbody tr:hover { background:#f0f7ff; }
+tbody tr:last-child { border-bottom:none; }
+td { padding:12px 14px; vertical-align:middle; }
+.maker-name { font-weight:700; color:#1e293b; font-size:.95rem; }
+.maker-contact { font-size:.78rem; color:var(--gray); margin-top:2px; }
+.badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:.75rem; font-weight:700; }
+.badge-blue { background:#dbeafe; color:#1d4ed8; }
+.badge-green { background:#dcfce7; color:#15803d; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
+.item-count { font-size:1.4rem; font-weight:800; color:var(--primary); text-align:center; }
+.item-label { font-size:.7rem; color:var(--gray); text-align:center; text-transform:uppercase; }
+.action-btn { border:none; border-radius:7px; padding:5px 12px; font-size:.78rem; font-weight:600; cursor:pointer; }
+.btn-edit { background:#eff6ff; color:#2563eb; }
+.btn-edit:hover { background:#dbeafe; }
+.btn-view { background:#f0fdf4; color:#16a34a; }
+.btn-view:hover { background:#dcfce7; }
+.search-bar { display:flex; gap:8px; margin-bottom:16px; }
+.search-bar input { border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:.9rem; outline:none; flex:1; max-width:320px; }
+.search-bar input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+</style>
+
+<div class="page-header">
+  <h1 class="page-title">🏭 Makers</h1>
+  <button class="btn btn-primary" onclick="openAdd()">+ Add Maker</button>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="val">{{ makers|length }}</div><div class="lbl">Total Makers</div></div>
+  <div class="stat-card"><div class="val" id="statItems">—</div><div class="lbl">Total Items</div></div>
+  <div class="stat-card"><div class="val" id="statStock">—</div><div class="lbl">Total Stock</div></div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="makerSearch" placeholder="🔍 Search maker, address, mobile..." oninput="filterMakers()">
+</div>
+
+
+{% if makers %}
+<div style="background:linear-gradient(135deg,#fef2f2,#fff); border:2px solid #fca5a5; border-radius:12px; padding:14px 20px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+    <div style="font-size:28px;">⚠️</div>
+    <div>
+        <div style="font-weight:800; font-size:15px; color:#dc2626;">Outstanding Payments Due</div>
+        <div style="font-size:13px; color:#64748b; margin-top:2px;">Pending balances with your makers</div>
+    </div>
+    <div style="margin-left:auto; display:flex; flex-wrap:wrap; gap:8px;">
+        {% for m in makers %}{% if m.9 > 0 %}
+        <a href="/dashboard/makers/ledger/{{ m.1|urlencode }}/" style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:4px 12px;font-weight:700;font-size:12px;text-decoration:none;">
+            {{ m.1 }}: PKR {{ m.9|floatformat:0 }}
+        </a>
+        {% endif %}{% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="table-wrap">
+<div class="table-responsive">
+<table id="makersTable">
+  <thead>
+    <tr>
+      <th style="width:80px; text-align:center; cursor:pointer;" onclick="sortTable('items')">Items <span id="sort-items">↕</span></th>
+      <th style="cursor:pointer;" onclick="sortTable('name')">Maker <span id="sort-name">↕</span></th>
+      <th>Address</th>
+      <th>Mobile</th>
+      <th>Landline</th>
+      <th style="cursor:pointer;" onclick="sortTable('stock')">Stock <span id="sort-stock">↕</span></th>
+      <th style="cursor:pointer;" onclick="sortTable('value')">Value <span id="sort-value">↕</span></th>
+      <th style="text-align:center; cursor:pointer;" onclick="sortTable('balance')">Balance <span id="sort-balance">↕</span></th>
+      <th style="text-align:center;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for m in makers %}
+  <tr data-search="{{ m.1|lower }} {{ m.2|lower }} {{ m.3|lower }}" data-name="{{ m.1|lower }}" data-items="{{ m.6|default:0 }}" data-stock="{{ m.7|default:0 }}" data-value="{{ m.8|default:0 }}" data-balance="{{ m.9|default:0 }}">
+    <td>
+      <div class="item-count">{{ m.6|default:0 }}</div>
+      <div class="item-label">items</div>
+    </td>
+    <td>
+      <div class="maker-name">{{ m.1 }}</div>
+    </td>
+    <td><span class="maker-contact">{{ m.2|default:"—" }}</span></td>
+    <td>
+      {% if m.3 %}
+      <a href="tel:{{ m.3 }}" class="badge badge-green" style="text-decoration:none;">📞 {{ m.3 }}</a>
+      {% else %}<span class="maker-contact">—</span>{% endif %}
+    </td>
+    <td>
+      {% if m.4 %}
+      <span class="badge badge-blue">☎ {{ m.4 }}</span>
+      {% else %}<span class="maker-contact">—</span>{% endif %}
+    </td>
+    <td><span class="badge badge-blue">{{ m.7|default:0 }} units</span></td>
+    <td><span class="badge badge-purple">PKR {{ m.8|default:0|floatformat:0 }}</span></td>
+    <td style="text-align:center;">
+      {% if m.9 > 0 %}
+        <span style="background:#fee2e2;color:#ef4444;border-radius:8px;padding:4px 10px;font-weight:800;font-size:13px;">PKR {{ m.9|floatformat:0 }}</span>
+      {% elif m.9 < 0 %}
+        <span style="background:#dcfce7;color:#16a34a;border-radius:8px;padding:4px 10px;font-weight:800;font-size:13px;">CR {{ m.9|floatformat:0 }}</span>
+      {% else %}
+        <span style="color:#94a3b8;font-size:13px;">—</span>
+      {% endif %}
+    </td>
+    <td style="text-align:center;">
+      <div style="display:flex; gap:6px; justify-content:center;">
+        <button class="action-btn btn-view" onclick="viewItems('{{ m.1|escapejs }}')">📦 Items</button>
+        <a href="/dashboard/makers/ledger/{{ m.1|urlencode }}/" class="action-btn" style="background:#e0f2fe;color:#0284c7;border:none;border-radius:7px;padding:5px 12px;font-weight:700;font-size:12px;text-decoration:none;">📒 Ledger</a>
+        <button class="action-btn btn-edit" onclick="editMaker({{ m.0 }}, '{{ m.1|escapejs }}', '{{ m.2|default:''|escapejs }}', '{{ m.3|default:''|escapejs }}', '{{ m.4|default:''|escapejs }}', '{{ m.5|default:''|escapejs }}')">✏️ Edit</button>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; width:480px; max-width:95%; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="background:linear-gradient(135deg,#1e293b,#334155); padding:16px 20px; display:flex; align-items:center;">
+      <div style="color:#fff; font-size:1rem; font-weight:700;">+ Add Maker</div>
+      <button onclick="closeAdd()" style="margin-left:auto; background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <form method="post" action="/dashboard/makers/add/">
+      {% csrf_token %}
+      <div style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+        <div><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Name *</label>
+        <input type="text" class="form-control mt-1" name="name" required></div>
+        <div><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Address</label>
+        <input type="text" class="form-control mt-1" name="address"></div>
+        <div class="row g-2">
+          <div class="col"><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Mobile</label>
+          <input type="text" class="form-control mt-1" name="mobile"></div>
+          <div class="col"><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Landline</label>
+          <input type="text" class="form-control mt-1" name="landline"></div>
+        </div>
+        <div><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Email</label>
+        <input type="email" class="form-control mt-1" name="email" placeholder="maker@example.com"></div>
+      </div>
+      <div style="padding:12px 20px; background:#f8fafc; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeAdd()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Maker</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; width:480px; max-width:95%; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8); padding:16px 20px; display:flex; align-items:center;">
+      <div style="color:#fff; font-size:1rem; font-weight:700;" id="editModalTitle">Edit Maker</div>
+      <button onclick="closeEdit()" style="margin-left:auto; background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <form method="post" id="editForm">
+      {% csrf_token %}
+      <div style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+        <div><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Name *</label>
+        <input type="text" class="form-control mt-1" name="name" id="editName" required></div>
+        <div><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Address</label>
+        <input type="text" class="form-control mt-1" name="address" id="editAddress"></div>
+        <div class="row g-2">
+          <div class="col"><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Mobile</label>
+          <input type="text" class="form-control mt-1" name="mobile" id="editMobile"></div>
+          <div class="col"><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Landline</label>
+          <input type="text" class="form-control mt-1" name="landline" id="editLandline"></div>
+        </div>
+        <div><label style="font-size:.8rem; font-weight:700; color:var(--gray); text-transform:uppercase;">Email</label>
+        <input type="email" class="form-control mt-1" name="email" id="editEmail" placeholder="maker@example.com"></div>
+      </div>
+      <div style="padding:12px 20px; background:#f8fafc; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeEdit()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let sortDir = {};
+function sortTable(col) {
+  const tbody = document.querySelector('#makersTable tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const dir = sortDir[col] === 'asc' ? 'desc' : 'asc';
+  sortDir[col] = dir;
+
+  // Reset all indicators
+  ['items','name','stock','value'].forEach(c => {
+    const el = document.getElementById('sort-' + c);
+    if (el) el.textContent = '↕';
+  });
+  const indicator = document.getElementById('sort-' + col);
+  if (indicator) indicator.textContent = dir === 'asc' ? '↑' : '↓';
+
+  rows.sort((a, b) => {
+    let aVal = a.dataset[col] || '';
+    let bVal = b.dataset[col] || '';
+    if (col !== 'name') {
+      aVal = parseFloat(aVal) || 0;
+      bVal = parseFloat(bVal) || 0;
+      return dir === 'asc' ? aVal - bVal : bVal - aVal;
+    } else {
+      return dir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    }
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// Calculate stats
+document.addEventListener('DOMContentLoaded', function() {
+  let totalItems = 0, totalStock = 0;
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    totalItems += parseInt(tr.querySelector('.item-count').textContent) || 0;
+    const stockBadge = tr.querySelectorAll('.badge')[2];
+    if (stockBadge) totalStock += parseInt(stockBadge.textContent) || 0;
+  });
+  document.getElementById('statItems').textContent = totalItems;
+  document.getElementById('statStock').textContent = totalStock;
+});
+
+function filterMakers() {
+  const q = document.getElementById('makerSearch').value.toLowerCase();
+  document.querySelectorAll('#makersTable tbody tr').forEach(tr => {
+    tr.style.display = tr.dataset.search.includes(q) ? '' : 'none';
+  });
+}
+
+function openAdd() {
+  document.getElementById('addModal').style.display = 'flex';
+}
+function closeAdd() {
+  document.getElementById('addModal').style.display = 'none';
+}
+function editMaker(id, name, address, mobile, landline, email) {
+  document.getElementById('editName').value = name;
+  document.getElementById('editAddress').value = address;
+  document.getElementById('editMobile').value = mobile;
+  document.getElementById('editLandline').value = landline;
+  document.getElementById('editEmail').value = email || '';
+  document.getElementById('editModalTitle').textContent = 'Edit — ' + name;
+  document.getElementById('editForm').action = '/dashboard/makers/edit/' + id + '/';
+  document.getElementById('editModal').style.display = 'flex';
+}
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+}
+function viewItems(maker) {
+  window.location.href = '/dashboard/inventory/?q=' + encodeURIComponent(maker);
+}
+// Close modals on backdrop click
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAdd();
+});
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEdit();
+});
+</script>
+{% endblock %}

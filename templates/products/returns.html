@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Returns & Refunds - MAK Supplies</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #800020;
+            --secondary-color: #a0002a;
+            --accent-color: #f4a261;
+            --dark: #1a1a1a;
+            --navy: #1a2f4a;
+            --light-bg: #f8f9fa;
+            --text-dark: #2c3e50;
+            --border-color: #e8e8e8;
+            --success: #27ae60;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background-color: var(--light-bg); color: var(--text-dark); }
+
+        .navbar-custom { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); padding: 1rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .navbar-brand { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: white !important; letter-spacing: 1px; }
+        .nav-link { color: white !important; text-decoration: none; font-weight: 500; transition: all 0.3s ease; padding: 8px 0; border-bottom: 2px solid transparent; }
+        .nav-link:hover { border-bottom-color: var(--accent-color); }
+        .cart-btn { background: white; color: var(--primary-color); padding: 10px 25px; border-radius: 50px; border: none; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .cart-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); color: var(--primary-color); }
+
+        .page-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--primary-color) 100%);
+            padding: 70px 0 50px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-hero::before { content: ''; position: absolute; width: 500px; height: 500px; background: rgba(255,255,255,0.03); border-radius: 50%; top: -200px; right: -100px; }
+        .page-hero h1 { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; margin-bottom: 15px; position: relative; z-index: 1; }
+        .page-hero p { font-size: 1.1rem; opacity: 0.9; position: relative; z-index: 1; }
+
+        .breadcrumb-section { background: white; padding: 15px 0; border-bottom: 1px solid var(--border-color); }
+        .breadcrumb { background: none; padding: 0; margin: 0; }
+        .breadcrumb-item a { color: var(--primary-color); text-decoration: none; }
+
+        .main-section { padding: 60px 0; }
+
+        .policy-card {
+            background: white;
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        .policy-card:hover { box-shadow: 0 8px 35px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .policy-card h4 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--dark); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .policy-card h4 i { color: var(--primary-color); font-size: 1.2rem; }
+        .policy-card p { color: #555; line-height: 1.8; margin-bottom: 12px; }
+        .policy-card p:last-child { margin-bottom: 0; }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(128,0,32,0.06), rgba(160,0,42,0.04));
+            border: 1px solid rgba(128,0,32,0.15);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .highlight-box i { color: var(--primary-color); font-size: 1.3rem; margin-top: 2px; flex-shrink: 0; }
+        .highlight-box p { margin: 0; color: #444; line-height: 1.7; }
+        .highlight-box strong { color: var(--primary-color); }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(231,76,60,0.06), rgba(192,57,43,0.04));
+            border: 1px solid rgba(231,76,60,0.2);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .warning-box i { color: #e74c3c; font-size: 1.3rem; margin-top: 2px; flex-shrink: 0; }
+        .warning-box p { margin: 0; color: #444; line-height: 1.7; }
+
+        .success-box {
+            background: linear-gradient(135deg, rgba(39,174,96,0.06), rgba(46,204,113,0.04));
+            border: 1px solid rgba(39,174,96,0.2);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .success-box i { color: var(--success); font-size: 1.3rem; margin-top: 2px; flex-shrink: 0; }
+        .success-box p { margin: 0; color: #444; line-height: 1.7; }
+
+        .step-list { list-style: none; padding: 0; margin: 15px 0; }
+        .step-list li { display: flex; align-items: flex-start; gap: 15px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .step-list li:last-child { border-bottom: none; }
+        .step-num { width: 32px; height: 32px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        .step-text { color: #555; line-height: 1.7; padding-top: 4px; }
+
+        .condition-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .condition-item {
+            padding: 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .condition-item.allowed { background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: #2d6a4f; }
+        .condition-item.not-allowed { background: rgba(231,76,60,0.08); border: 1px solid rgba(231,76,60,0.2); color: #922b21; }
+        .condition-item i { font-size: 1.1rem; margin-top: 2px; flex-shrink: 0; }
+        .condition-item.allowed i { color: var(--success); }
+        .condition-item.not-allowed i { color: #e74c3c; }
+
+        .sidebar-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        .sidebar-card h5 { font-weight: 700; color: var(--dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; }
+        .sidebar-card h5 i { color: var(--primary-color); }
+
+        .quick-stat { text-align: center; padding: 20px; background: var(--light-bg); border-radius: 12px; margin-bottom: 15px; }
+        .quick-stat .value { font-size: 2rem; font-weight: 700; color: var(--primary-color); display: block; }
+        .quick-stat .label { font-size: 0.85rem; color: #888; margin-top: 4px; }
+
+        .contact-cta { background: linear-gradient(135deg, var(--navy), #2a4a6a); border-radius: 16px; padding: 30px; color: white; text-align: center; }
+        .contact-cta h5 { font-weight: 700; margin-bottom: 10px; }
+        .contact-cta p { opacity: 0.85; font-size: 0.95rem; margin-bottom: 20px; }
+        .contact-cta a { background: white; color: var(--primary-color); padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: 600; display: inline-block; transition: all 0.3s ease; }
+        .contact-cta a:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); color: var(--primary-color); }
+
+        .footer { background: var(--dark); color: white; padding: 40px 0 20px; }
+        .footer-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; margin-bottom: 30px; }
+        .footer-section h4 { font-family: 'Playfair Display', serif; margin-bottom: 20px; }
+        .footer-section ul { list-style: none; padding: 0; }
+        .footer-section ul li { margin-bottom: 10px; }
+        .footer-section a { color: rgba(255,255,255,0.7); text-decoration: none; transition: color 0.3s ease; }
+        .footer-section a:hover { color: white; }
+        .footer-bottom { text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+
+        @media (max-width: 768px) {
+            .condition-grid { grid-template-columns: 1fr; }
+            .page-hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar-custom">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-3">
+            <a class="navbar-brand" href="/">MAK Supplies</a>
+            <div class="d-none d-md-flex" style="gap:30px;">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/categories/" class="nav-link">Categories</a>
+                <a href="/products/" class="nav-link">All Products</a>
+                <a href="/contact/" class="nav-link">Contact</a>
+            </div>
+            <a href="/cart/" class="cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Cart</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<section class="page-hero">
+    <div class="container">
+        <h1><i class="fas fa-undo me-3"></i>Returns & Refunds</h1>
+        <p>Our straightforward returns policy — your satisfaction is our priority</p>
+    </div>
+</section>
+
+<div class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active">Returns & Refunds</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="main-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-8">
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-info-circle"></i> Our Returns Policy</h4>
+                    <p>At MAK Supplies, we take great pride in the quality of our surgical and medical instruments. We want you to be completely satisfied with every purchase. If for any reason you are not happy with your order, we offer a clear and fair returns process in accordance with EU consumer rights regulations.</p>
+                    <div class="highlight-box">
+                        <i class="fas fa-calendar-check"></i>
+                        <p>You have <strong>14 days</strong> from the date of delivery to request a return. After this period, we are unable to accept return requests unless the item is faulty or damaged.</p>
+                    </div>
+                </div>
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-check-double"></i> Return Conditions</h4>
+                    <p>To be eligible for a return, items must meet the following conditions:</p>
+                    <div class="condition-grid">
+                        <div class="condition-item allowed">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Item is unused and in its original condition</span>
+                        </div>
+                        <div class="condition-item allowed">
+                            <i class="fas fa-check-circle"></i>
+                            <span>All original packaging is intact and undamaged</span>
+                        </div>
+                        <div class="condition-item allowed">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Item is unopened and factory sealed</span>
+                        </div>
+                        <div class="condition-item allowed">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Return requested within 14 days of delivery</span>
+                        </div>
+                        <div class="condition-item not-allowed">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Sterile or single-use items cannot be returned once opened</span>
+                        </div>
+                        <div class="condition-item not-allowed">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Items showing signs of use or wear are not eligible</span>
+                        </div>
+                        <div class="condition-item not-allowed">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Items with damaged or missing original packaging</span>
+                        </div>
+                        <div class="condition-item not-allowed">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Custom or specially ordered items</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-ban"></i> Non-Returnable Items</h4>
+                    <p>Due to the nature of medical and surgical instruments, the following categories are strictly non-returnable for health and safety reasons:</p>
+                    <div class="warning-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p><strong>Sterile instruments</strong> — Any item that has been removed from sterile packaging cannot be returned under any circumstances, as sterility cannot be guaranteed once the seal is broken.</p>
+                    </div>
+                    <p>This policy is in place to protect the health and safety of all our customers and complies with applicable medical device regulations in Ireland and the EU.</p>
+                </div>
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-truck"></i> Return Shipping</h4>
+                    <p>Customers are responsible for the cost of return shipping unless the item received was incorrect or arrived damaged/defective.</p>
+                    <div class="highlight-box">
+                        <i class="fas fa-info-circle"></i>
+                        <p>We strongly recommend using a <strong>tracked and insured shipping service</strong> when returning items. MAK Supplies cannot be held responsible for items lost or damaged in return transit.</p>
+                    </div>
+                    <p>If your item arrived damaged or you received an incorrect product, we will arrange and cover the cost of the return collection. Please contact us immediately in this case.</p>
+                </div>
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-list-ol"></i> How to Return an Item</h4>
+                    <ul class="step-list">
+                        <li>
+                            <span class="step-num">1</span>
+                            <span class="step-text"><strong>Contact Us</strong> — Email us at <a href="mailto:3348skt@gmail.com" style="color:var(--primary-color);">3348skt@gmail.com</a> or use our <a href="/contact/" style="color:var(--primary-color);">Contact Form</a> within 14 days of receiving your order. Include your order number and reason for return.</span>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <span class="step-text"><strong>Await Approval</strong> — Our team will review your return request and respond within 2 business days with instructions and our return address.</span>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <span class="step-text"><strong>Pack Securely</strong> — Carefully repack the item in its original packaging. Include a note with your name, order number, and reason for return inside the parcel.</span>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <span class="step-text"><strong>Ship the Item</strong> — Send the parcel using a tracked courier service and share the tracking number with us via email.</span>
+                        </li>
+                        <li>
+                            <span class="step-num">5</span>
+                            <span class="step-text"><strong>Refund Processed</strong> — Once we receive and inspect the returned item, we will process your refund within 5–7 business days to your original payment method.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-euro-sign"></i> Refunds</h4>
+                    <p>Once your return is received and inspected, we will notify you of the approval or rejection of your refund by email.</p>
+                    <div class="success-box">
+                        <i class="fas fa-check-circle"></i>
+                        <p>If approved, your refund will be processed to your <strong>original payment method</strong> within <strong>5–7 business days</strong>. Please allow additional time for your bank or card provider to process the credit.</p>
+                    </div>
+                    <p>Please note that original shipping costs, if any were charged, are non-refundable unless the return is due to an error on our part or a defective product.</p>
+
+                    <div class="warning-box">
+                        <i class="fas fa-clock"></i>
+                        <p>If you haven't received your refund within <strong>10 business days</strong> of approval, please check with your bank first, then <a href="/contact/" style="color:#e74c3c; font-weight:600;">contact us</a> and we will investigate.</p>
+                    </div>
+                </div>
+
+                <div class="policy-card">
+                    <h4><i class="fas fa-exchange-alt"></i> Faulty or Incorrect Items</h4>
+                    <p>If you receive an item that is faulty, damaged, or different from what you ordered, please contact us within <strong>7 days</strong> of delivery. In these cases, we will:</p>
+                    <div class="success-box">
+                        <i class="fas fa-check-circle"></i>
+                        <p>Arrange a <strong>free return collection</strong>, provide a <strong>full replacement</strong> at no extra cost, or issue a <strong>full refund</strong> — whichever you prefer.</p>
+                    </div>
+                    <p>Please take photographs of the damaged or incorrect item and include them in your email to help us resolve your case as quickly as possible.</p>
+                </div>
+
+            </div>
+
+            <!-- SIDEBAR -->
+            <div class="col-lg-4">
+                <div class="sidebar-card">
+                    <h5><i class="fas fa-undo"></i> Returns at a Glance</h5>
+                    <div class="quick-stat">
+                        <span class="value">14</span>
+                        <div class="label">Days to Return</div>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="value">5–7</span>
+                        <div class="label">Days for Refund</div>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="value">FREE</span>
+                        <div class="label">Returns on Faulty Items</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <h5><i class="fas fa-map-marker-alt"></i> Return Address</h5>
+                    <p style="color:#555; line-height:1.7;">Please <a href="/contact/" style="color:var(--primary-color); font-weight:600;">contact us first</a> to receive your approved return address before sending any items back.<br><br>
+                    <strong>MAK Supplies</strong><br>
+                    30 Waterside View<br>
+                    Malahide, Dublin<br>
+                    Ireland</p>
+                </div>
+
+                <div class="sidebar-card">
+                    <h5><i class="fas fa-link"></i> Related Policies</h5>
+                    <ul style="list-style:none; padding:0;">
+                        <li style="padding:10px 0; border-bottom:1px solid var(--border-color);"><a href="/shipping/" style="color:var(--primary-color); text-decoration:none; font-weight:500;"><i class="fas fa-shipping-fast me-2"></i>Shipping Information</a></li>
+                        <li style="padding:10px 0;"><a href="/contact/" style="color:var(--primary-color); text-decoration:none; font-weight:500;"><i class="fas fa-headset me-2"></i>Contact Customer Service</a></li>
+                    </ul>
+                </div>
+
+                <div class="contact-cta">
+                    <h5><i class="fas fa-headset me-2"></i>Need Help?</h5>
+                    <p>Want to start a return or have a question about our policy?</p>
+                    <a href="/contact/">Contact Us</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About MAK Supplies</h4>
+                <p>Your trusted source for premium medical equipment and surgical instruments. Quality products, fast shipping, exceptional service.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/categories/">Categories</a></li>
+                    <li><a href="/products/">All Products</a></li>
+                    <li><a href="/cart/">Cart</a></li>
+                    <li><a href="https://www.anpost.com" target="_blank">Track with An Post</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Customer Service</h4>
+                <ul>
+                    <li><a href="/contact/">Contact Us</a></li>
+                    <li><a href="/shipping/">Shipping Info</a></li>
+                    <li><a href="/returns/">Returns</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <ul>
+                    <li><i class="fas fa-envelope"></i> 3348skt@gmail.com</li>
+                    <li><i class="fas fa-phone"></i> +353 86 083 4385</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Malahide, Dublin, Ireland</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 MAK Supplies. All rights reserved.</p>
+            <p>Registered in Ireland. Registration No. 521781</p>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

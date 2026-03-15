@@ -1,0 +1,311 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<style>
+@media (max-width: 767px) {
+    div[style*="padding:30px"] { padding:16px !important; }
+    div[style*="justify-content:space-between"] { flex-direction:column; gap:10px; }
+    h2 { font-size:1.2rem !important; }
+    table th, table td { font-size:0.72rem !important; padding:8px 10px !important; white-space:nowrap; }
+    #rateModal > div { padding:20px !important; }
+}
+</style>
+
+<div style="padding:30px;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <h2 style="font-family:'Playfair Display',serif; margin:0;">🚚 Shipping Rates</h2>
+        <button onclick="openModal()" style="background:#800020; color:white; border:none; padding:10px 22px; border-radius:8px; font-weight:600; cursor:pointer;">
+            <i class="fas fa-plus"></i> Add Country
+        </button>
+    </div>
+    {% if error %}
+    <div style="background:#fee2e2; color:#e74c3c; padding:14px 20px; border-radius:10px; margin-bottom:20px; font-weight:600; border-left:4px solid #e74c3c;">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- TABLE -->
+    <div style="background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden;">
+        <div class="table-responsive">
+        <table style="width:100%; border-collapse:collapse; min-width:600px;">
+            <thead>
+                <tr style="background:linear-gradient(135deg,#800020,#a0002a); color:white;">
+                    <th style="padding:14px 20px; text-align:left;">Country</th>
+                    <th style="padding:14px 20px; text-align:left;">Code</th>
+                    <th style="padding:14px 20px; text-align:center;">Standard (€)</th>
+                    <th style="padding:14px 20px; text-align:center;">Tracked (€)</th>
+                    <th style="padding:14px 20px; text-align:center;">Free Shipping</th>
+                    <th style="padding:14px 20px; text-align:center;">Active</th>
+                    <th style="padding:14px 20px; text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rate in rates %}
+                <tr style="border-bottom:1px solid #f0f0f0; {% if not rate.is_active %}opacity:0.5;{% endif %}">
+                    <td style="padding:13px 20px; font-weight:600;">{{ rate.country }}</td>
+                    <td style="padding:13px 20px; color:#888;">{{ rate.country_code }}</td>
+                    <td style="padding:13px 20px; text-align:center;">€{{ rate.standard_price }}</td>
+                    <td style="padding:13px 20px; text-align:center; font-weight:700; color:#800020;">€{{ rate.tracked_price }}</td>
+                    <td style="padding:13px 20px; text-align:center;">
+                        <button onclick="toggleFreeShipping({{ rate.id }}, this)"
+                            style="padding:5px 16px; border-radius:20px; border:none; cursor:pointer; font-size:0.8rem; font-weight:600;
+                            background:{% if rate.has_free_postage %}#d4edda{% else %}#f8d7da{% endif %};
+                            color:{% if rate.has_free_postage %}#155724{% else %}#721c24{% endif %};"
+                            data-status="{{ rate.has_free_postage|yesno:'true,false' }}">
+                            {% if rate.has_free_postage %}✓ Yes{% else %}✗ No{% endif %}
+                        </button>
+                    </td>
+                    <td style="padding:13px 20px; text-align:center;">
+                        <button onclick="toggleActive({{ rate.id }}, this)"
+                            style="padding:5px 16px; border-radius:20px; border:none; cursor:pointer; font-size:0.8rem; font-weight:600;
+                            background:{% if rate.is_active %}#d4edda{% else %}#f8d7da{% endif %};
+                            color:{% if rate.is_active %}#155724{% else %}#721c24{% endif %};">
+                            {% if rate.is_active %}✓ Active{% else %}✗ Inactive{% endif %}
+                        </button>
+                    </td>
+                    <td style="padding:13px 20px; text-align:center;">
+                        <button onclick="editRate({{ rate.id }}, '{{ rate.country }}', '{{ rate.country_code }}', '{{ rate.standard_price }}', '{{ rate.tracked_price }}', {{ rate.is_active|yesno:'true,false' }}, {{ rate.has_free_postage|yesno:'true,false' }})"
+                            style="background:#f4a261; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600; margin-right:6px;">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <a href="{% url 'dashboard:delete_shipping_rate' rate.id %}"
+                            onclick="return confirm('Delete {{ rate.country }}?')"
+                            style="background:#e74c3c; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600; text-decoration:none;">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="padding:40px; text-align:center; color:#888;">No shipping rates found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div id="rateModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:36px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 24px; font-family:'Playfair Display',serif;" id="modalTitle">Add Country</h3>
+        <form method="POST" action="{% url 'dashboard:save_shipping_rate' %}">
+            {% csrf_token %}
+            <input type="hidden" name="rate_id" id="rateId">
+            <div style="margin-bottom:16px;">
+                <label style="font-weight:600; display:block; margin-bottom:6px;">Country *</label>
+                <select id="countrySelect" onchange="fillCountry(this)" style="width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem;">
+                    <option value="">-- Select Country --</option>
+                    <option value="Afghanistan|AF">Afghanistan (AF)</option>
+                    <option value="Albania|AL">Albania (AL)</option>
+                    <option value="Algeria|DZ">Algeria (DZ)</option>
+                    <option value="Andorra|AD">Andorra (AD)</option>
+                    <option value="Angola|AO">Angola (AO)</option>
+                    <option value="Argentina|AR">Argentina (AR)</option>
+                    <option value="Armenia|AM">Armenia (AM)</option>
+                    <option value="Australia|AU">Australia (AU)</option>
+                    <option value="Austria|AT">Austria (AT)</option>
+                    <option value="Azerbaijan|AZ">Azerbaijan (AZ)</option>
+                    <option value="Bahrain|BH">Bahrain (BH)</option>
+                    <option value="Bangladesh|BD">Bangladesh (BD)</option>
+                    <option value="Belarus|BY">Belarus (BY)</option>
+                    <option value="Belgium|BE">Belgium (BE)</option>
+                    <option value="Bolivia|BO">Bolivia (BO)</option>
+                    <option value="Bosnia and Herzegovina|BA">Bosnia and Herzegovina (BA)</option>
+                    <option value="Brazil|BR">Brazil (BR)</option>
+                    <option value="Bulgaria|BG">Bulgaria (BG)</option>
+                    <option value="Cambodia|KH">Cambodia (KH)</option>
+                    <option value="Canada|CA">Canada (CA)</option>
+                    <option value="Chile|CL">Chile (CL)</option>
+                    <option value="China|CN">China (CN)</option>
+                    <option value="Colombia|CO">Colombia (CO)</option>
+                    <option value="Croatia|HR">Croatia (HR)</option>
+                    <option value="Cyprus|CY">Cyprus (CY)</option>
+                    <option value="Czech Republic|CZ">Czech Republic (CZ)</option>
+                    <option value="Denmark|DK">Denmark (DK)</option>
+                    <option value="Ecuador|EC">Ecuador (EC)</option>
+                    <option value="Egypt|EG">Egypt (EG)</option>
+                    <option value="Estonia|EE">Estonia (EE)</option>
+                    <option value="Ethiopia|ET">Ethiopia (ET)</option>
+                    <option value="Finland|FI">Finland (FI)</option>
+                    <option value="France|FR">France (FR)</option>
+                    <option value="Georgia|GE">Georgia (GE)</option>
+                    <option value="Germany|DE">Germany (DE)</option>
+                    <option value="Ghana|GH">Ghana (GH)</option>
+                    <option value="Greece|GR">Greece (GR)</option>
+                    <option value="Hungary|HU">Hungary (HU)</option>
+                    <option value="Iceland|IS">Iceland (IS)</option>
+                    <option value="India|IN">India (IN)</option>
+                    <option value="Indonesia|ID">Indonesia (ID)</option>
+                    <option value="Iran|IR">Iran (IR)</option>
+                    <option value="Iraq|IQ">Iraq (IQ)</option>
+                    <option value="Ireland|IE">Ireland (IE)</option>
+                    <option value="Israel|IL">Israel (IL)</option>
+                    <option value="Italy|IT">Italy (IT)</option>
+                    <option value="Japan|JP">Japan (JP)</option>
+                    <option value="Jordan|JO">Jordan (JO)</option>
+                    <option value="Kazakhstan|KZ">Kazakhstan (KZ)</option>
+                    <option value="Kenya|KE">Kenya (KE)</option>
+                    <option value="Kuwait|KW">Kuwait (KW)</option>
+                    <option value="Latvia|LV">Latvia (LV)</option>
+                    <option value="Lebanon|LB">Lebanon (LB)</option>
+                    <option value="Lithuania|LT">Lithuania (LT)</option>
+                    <option value="Luxembourg|LU">Luxembourg (LU)</option>
+                    <option value="Malaysia|MY">Malaysia (MY)</option>
+                    <option value="Malta|MT">Malta (MT)</option>
+                    <option value="Mexico|MX">Mexico (MX)</option>
+                    <option value="Moldova|MD">Moldova (MD)</option>
+                    <option value="Morocco|MA">Morocco (MA)</option>
+                    <option value="Netherlands|NL">Netherlands (NL)</option>
+                    <option value="New Zealand|NZ">New Zealand (NZ)</option>
+                    <option value="Nigeria|NG">Nigeria (NG)</option>
+                    <option value="Northern Ireland|GB">Northern Ireland (GB)</option>
+                    <option value="Norway|NO">Norway (NO)</option>
+                    <option value="Oman|OM">Oman (OM)</option>
+                    <option value="Pakistan|PK">Pakistan (PK)</option>
+                    <option value="Peru|PE">Peru (PE)</option>
+                    <option value="Philippines|PH">Philippines (PH)</option>
+                    <option value="Poland|PL">Poland (PL)</option>
+                    <option value="Portugal|PT">Portugal (PT)</option>
+                    <option value="Qatar|QA">Qatar (QA)</option>
+                    <option value="Romania|RO">Romania (RO)</option>
+                    <option value="Russia|RU">Russia (RU)</option>
+                    <option value="Saudi Arabia|SA">Saudi Arabia (SA)</option>
+                    <option value="Serbia|RS">Serbia (RS)</option>
+                    <option value="Singapore|SG">Singapore (SG)</option>
+                    <option value="Slovakia|SK">Slovakia (SK)</option>
+                    <option value="Slovenia|SI">Slovenia (SI)</option>
+                    <option value="South Africa|ZA">South Africa (ZA)</option>
+                    <option value="South Korea|KR">South Korea (KR)</option>
+                    <option value="Spain|ES">Spain (ES)</option>
+                    <option value="Sri Lanka|LK">Sri Lanka (LK)</option>
+                    <option value="Sweden|SE">Sweden (SE)</option>
+                    <option value="Switzerland|CH">Switzerland (CH)</option>
+                    <option value="Taiwan|TW">Taiwan (TW)</option>
+                    <option value="Thailand|TH">Thailand (TH)</option>
+                    <option value="Tunisia|TN">Tunisia (TN)</option>
+                    <option value="Turkey|TR">Turkey (TR)</option>
+                    <option value="Ukraine|UA">Ukraine (UA)</option>
+                    <option value="United Arab Emirates|AE">United Arab Emirates (AE)</option>
+                    <option value="United Kingdom|GB">United Kingdom (GB)</option>
+                    <option value="United States|US">United States (US)</option>
+                    <option value="Uruguay|UY">Uruguay (UY)</option>
+                    <option value="Uzbekistan|UZ">Uzbekistan (UZ)</option>
+                    <option value="Venezuela|VE">Venezuela (VE)</option>
+                    <option value="Vietnam|VN">Vietnam (VN)</option>
+                    <option value="Yemen|YE">Yemen (YE)</option>
+                    <option value="Zimbabwe|ZW">Zimbabwe (ZW)</option>
+                </select>
+                <input type="hidden" name="country" id="rateCountry">
+                <input type="hidden" name="country_code" id="rateCode">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                    <label style="font-weight:600; display:block; margin-bottom:6px;">Standard Price (€)</label>
+                    <input type="number" name="standard_price" id="rateStandard" step="0.01" min="0" value="0.00" style="width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem;">
+                </div>
+                <div>
+                    <label style="font-weight:600; display:block; margin-bottom:6px;">Tracked Price (€)</label>
+                    <input type="number" name="tracked_price" id="rateTracked" step="0.01" min="0" value="15.00" style="width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem;">
+                </div>
+            </div>
+            <div style="margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" name="has_free_postage" id="rateFreePostage" style="width:16px; height:16px; accent-color:#27ae60;">
+                <label for="rateFreePostage" style="font-weight:600;">Offer Free Standard Postage</label>
+            </div>
+            <div style="margin-bottom:24px; display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" name="is_active" id="rateActive" checked style="width:16px; height:16px; accent-color:#800020;">
+                <label for="rateActive" style="font-weight:600;">Active</label>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button type="submit" style="flex:1; background:#800020; color:white; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem;">Save</button>
+                <button type="button" onclick="closeModal()" style="flex:1; background:#f0f0f0; color:#333; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleActive(rateId, btn) {
+    fetch(`/dashboard/shipping-rates/toggle-active/${rateId}/`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (data.is_active) {
+                    btn.textContent = '✓ Active';
+                    btn.style.background = '#d4edda';
+                    btn.style.color = '#155724';
+                } else {
+                    btn.textContent = '✗ Inactive';
+                    btn.style.background = '#f8d7da';
+                    btn.style.color = '#721c24';
+                }
+            }
+        });
+}
+
+function toggleFreeShipping(rateId, btn) {
+    fetch(`/dashboard/shipping-rates/toggle-free/${rateId}/`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (data.has_free_postage) {
+                    btn.textContent = '✓ Yes';
+                    btn.style.background = '#d4edda';
+                    btn.style.color = '#155724';
+                    btn.dataset.status = 'true';
+                } else {
+                    btn.textContent = '✗ No';
+                    btn.style.background = '#f8d7da';
+                    btn.style.color = '#721c24';
+                    btn.dataset.status = 'false';
+                }
+            }
+        });
+}
+
+function fillCountry(select) {
+    var val = select.value;
+    if (!val) return;
+    var parts = val.split('|');
+    document.getElementById('rateCountry').value = parts[0];
+    document.getElementById('rateCode').value = parts[1] || '';
+}
+
+function openModal() {
+    document.getElementById('modalTitle').textContent = 'Add Country';
+    document.getElementById('rateId').value = '';
+    document.getElementById('rateCountry').value = '';
+    document.getElementById('rateCode').value = '';
+    document.getElementById('rateStandard').value = '0.00';
+    document.getElementById('rateTracked').value = '15.00';
+    document.getElementById('rateActive').checked = true;
+    document.getElementById('countrySelect').value = '';
+    document.getElementById('rateFreePostage').checked = false;
+    document.getElementById('rateModal').style.display = 'flex';
+}
+
+function editRate(id, country, code, standard, tracked, active, freePostage) {
+    document.getElementById('modalTitle').textContent = 'Edit ' + country;
+    document.getElementById('rateId').value = id;
+    document.getElementById('rateCountry').value = country;
+    document.getElementById('rateCode').value = code;
+    document.getElementById('rateStandard').value = standard;
+    document.getElementById('rateTracked').value = tracked;
+    document.getElementById('rateActive').checked = active;
+    document.getElementById('rateFreePostage').checked = freePostage;
+    // Pre-select country in dropdown
+    var select = document.getElementById('countrySelect');
+    for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value.startsWith(country + '|')) {
+            select.selectedIndex = i;
+            break;
+        }
+    }
+    document.getElementById('rateModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('rateModal').style.display = 'none';
+}
+</script>
+{% endblock %}

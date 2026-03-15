@@ -1,0 +1,237 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+:root { --maroon:#a91b2e; --border:#e2e8f0; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; padding:22px 28px; border-radius:14px; margin-bottom:22px; box-shadow:0 8px 24px rgba(107,15,26,0.3); display:flex; align-items:center; gap:16px; }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.stat-card { background:white; border-radius:12px; padding:18px 22px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+.stat-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.stat-value { font-size:24px; font-weight:800; margin-top:4px; }
+.mov-tbl th { background:#1e293b; color:white; font-size:11px; text-transform:uppercase; padding:10px 12px; }
+.mov-tbl td { padding:8px 12px; font-size:12px; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
+.mov-tbl tr:hover { background:#f8fafc; }
+.filter-bar { background:white; border-radius:12px; padding:14px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid var(--border); margin-bottom:18px; }
+.type-received { background:#dcfce7; color:#16a34a; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.type-adjustment { background:#e0f2fe; color:#0284c7; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.type-correction { background:#fef3c7; color:#d97706; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.type-sale { background:#fee2e2; color:#ef4444; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h2>📦 Stock Movement History</h2>
+        <p>Full log of every stock change — received, adjusted, corrected</p>
+    </div>
+    <button onclick="openAdjust()" class="btn-new" style="background:rgba(255,255,255,0.9);color:#a91b2e;border:none;border-radius:10px;padding:9px 20px;font-weight:700;">⚡ Manual Adjustment</button>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Movements</div>
+            <div class="stat-value" style="color:#6b0f1a;">{{ total_movements }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Units In</div>
+            <div class="stat-value" style="color:#16a34a;">+{{ total_in }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Units Out</div>
+            <div class="stat-value" style="color:#ef4444;">-{{ total_out }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Net Change</div>
+            <div class="stat-value" style="color:#0284c7;">{{ total_in|add:"-"|add:total_out }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <form class="d-flex gap-2 flex-wrap align-items-end" method="get">
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">SKU</label>
+            <input type="text" name="sku" value="{{ sku_filter }}" class="form-control form-control-sm" style="width:120px;" placeholder="e.g. 1234">
+        </div>
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Type</label>
+            <select name="type" class="form-select form-select-sm" style="width:160px;" onchange="this.form.submit()">
+                <option value="">All Types</option>
+                <option value="received" {% if type_filter == "received" %}selected{% endif %}>📥 Received</option>
+                <option value="adjustment" {% if type_filter == "adjustment" %}selected{% endif %}>⚡ Adjustment</option>
+                <option value="correction" {% if type_filter == "correction" %}selected{% endif %}>✏️ Correction</option>
+                <option value="sale" {% if type_filter == "sale" %}selected{% endif %}>🛒 Sale</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Period</label>
+            <select name="days" class="form-select form-select-sm" style="width:150px;" onchange="this.form.submit()">
+                <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                <option value="365" {% if days == 365 %}selected{% endif %}>Last 1 year</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm" style="background:#a91b2e;color:white;border-radius:8px;padding:6px 16px;font-weight:700;">Search</button>
+        <a href="/dashboard/inventory/stock-movement/" class="btn btn-sm btn-secondary" style="border-radius:8px;">Clear</a>
+    </form>
+</div>
+
+<!-- Table -->
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+    <table class="table mb-0 mov-tbl">
+        <thead>
+            <tr>
+                <th>#</th><th>Date</th><th>SKU</th><th>Title</th>
+                <th class="text-center">Type</th>
+                <th class="text-center">Change</th>
+                <th class="text-center">Before</th>
+                <th class="text-center">After</th>
+                <th>Ref</th><th>Note</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for m in movements %}
+        <tr>
+            <td style="color:#94a3b8;font-size:11px;">{{ m.id }}</td>
+            <td style="font-size:11px;white-space:nowrap;">{{ m.date }}</td>
+            <td><code>{{ m.sku }}</code></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ m.title }}">{{ m.title }}</td>
+            <td class="text-center">
+                {% if m.type == 'received' %}<span class="type-received">📥 Received</span>
+                {% elif m.type == 'adjustment' %}<span class="type-adjustment">⚡ Adjustment</span>
+                {% elif m.type == 'correction' %}<span class="type-correction">✏️ Correction</span>
+                {% elif m.type == 'sale' %}<span class="type-sale">🛒 Sale</span>
+                {% else %}<span>{{ m.type }}</span>{% endif %}
+            </td>
+            <td class="text-center fw-bold" style="color:{% if m.qty_change > 0 %}#16a34a{% else %}#ef4444{% endif %};">
+                {% if m.qty_change > 0 %}+{% endif %}{{ m.qty_change }}
+            </td>
+            <td class="text-center text-muted">{{ m.stock_before }}</td>
+            <td class="text-center fw-bold">{{ m.stock_after }}</td>
+            <td style="font-size:11px;color:#64748b;">{{ m.ref }}</td>
+            <td style="font-size:11px;color:#64748b;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.note }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="text-center text-muted py-4">No movements found for this period</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Manual Adjustment Modal -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:14px;border:none;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#0369a1,#0284c7);padding:16px 22px;display:flex;align-items:center;">
+                <div style="color:white;font-size:16px;font-weight:800;">⚡ Manual Stock Adjustment</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">SKU</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control fw-bold" id="adjSku" placeholder="Enter SKU..." onkeydown="if(event.key==='Enter'){event.preventDefault();fetchAdjSku();}">
+                        <button class="btn" style="background:#0284c7;color:white;" onclick="fetchAdjSku()">Fetch</button>
+                    </div>
+                    <div id="adjSkuInfo" style="margin-top:8px;font-size:13px;color:#64748b;display:none;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Type</label>
+                    <select class="form-select" id="adjType">
+                        <option value="adjustment">⚡ Adjustment (add/remove stock)</option>
+                        <option value="correction">✏️ Correction (fix count error)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Quantity Change</label>
+                    <input type="number" class="form-control" id="adjQty" placeholder="e.g. +10 or -5">
+                    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Use positive to add stock, negative to remove</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Note</label>
+                    <input type="text" class="form-control" id="adjNote" placeholder="Reason for adjustment...">
+                </div>
+                <div id="adjStatus" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn fw-bold text-white" onclick="saveAdjustment()" id="saveAdjBtn" style="background:linear-gradient(135deg,#0369a1,#0284c7);border:none;border-radius:8px;padding:8px 24px;">⚡ Apply Adjustment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAdjust() {
+    document.getElementById('adjSku').value = '';
+    document.getElementById('adjQty').value = '';
+    document.getElementById('adjNote').value = '';
+    document.getElementById('adjSkuInfo').style.display = 'none';
+    document.getElementById('adjStatus').style.display = 'none';
+    document.getElementById('saveAdjBtn').disabled = false;
+    document.getElementById('saveAdjBtn').textContent = '⚡ Apply Adjustment';
+    new bootstrap.Modal(document.getElementById('adjustModal')).show();
+    setTimeout(() => document.getElementById('adjSku').focus(), 400);
+}
+
+function fetchAdjSku() {
+    const sku = document.getElementById('adjSku').value.trim();
+    if (!sku) return;
+    fetch('/dashboard/inventory/sku-info/' + sku + '/')
+        .then(r => r.json())
+        .then(data => {
+            const info = document.getElementById('adjSkuInfo');
+            if (data.error) {
+                info.style.display = 'block';
+                info.innerHTML = '<span style="color:#ef4444;">❌ ' + data.error + '</span>';
+            } else {
+                info.style.display = 'block';
+                info.innerHTML = '<strong>' + data.title + '</strong> — Current Stock: <strong style="color:#0284c7;">' + data.stock + '</strong>';
+                document.getElementById('adjQty').focus();
+            }
+        });
+}
+
+function saveAdjustment() {
+    const sku = document.getElementById('adjSku').value.trim();
+    const qty = parseInt(document.getElementById('adjQty').value);
+    const note = document.getElementById('adjNote').value.trim();
+    const type = document.getElementById('adjType').value;
+    const btn = document.getElementById('saveAdjBtn');
+    const status = document.getElementById('adjStatus');
+
+    if (!sku) { alert('Enter a SKU'); return; }
+    if (!qty || qty === 0) { alert('Enter a valid quantity'); return; }
+    if (!note) { alert('Enter a reason for the adjustment'); return; }
+
+    btn.disabled = true; btn.textContent = '⏳ Saving...';
+
+    fetch('/dashboard/inventory/stock-movement/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({sku, qty_change: qty, note, type})
+    })
+    .then(r => r.json())
+    .then(data => {
+        status.style.display = 'block';
+        if (data.success) {
+            status.innerHTML = '<div style="background:#dcfce7;color:#16a34a;border-radius:8px;padding:10px 14px;font-weight:700;">✅ Stock updated: ' + data.stock_before + ' → ' + data.stock_after + '</div>';
+            btn.textContent = '✅ Done';
+            setTimeout(() => { bootstrap.Modal.getInstance(document.getElementById('adjustModal')).hide(); location.reload(); }, 1500);
+        } else {
+            status.innerHTML = '<div style="background:#fee2e2;color:#ef4444;border-radius:8px;padding:10px 14px;">❌ ' + (data.error || 'Error') + '</div>';
+            btn.disabled = false; btn.textContent = '⚡ Apply Adjustment';
+        }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; btn.textContent = '⚡ Apply Adjustment'; });
+}
+</script>
+{% endblock %}

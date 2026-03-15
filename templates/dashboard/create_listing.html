@@ -1,0 +1,395 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --surface: #f8fafc;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+}
+body { background: #f1f5f9; }
+.page-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+    color: white; padding: 28px 32px; border-radius: 16px; margin-bottom: 28px;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.3);
+}
+.page-header h2 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+.page-header p { margin: 6px 0 0; opacity: 0.7; font-size: 14px; }
+.step-card {
+    background: white; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden;
+}
+.step-header {
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    background: var(--surface); display: flex; align-items: center; gap: 14px;
+}
+.step-num {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: white; font-weight: 800; font-size: 14px; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+}
+.step-header h5 { margin: 0; font-size: 15px; font-weight: 700; color: var(--text); }
+.step-body { padding: 24px; }
+.sku-input-wrap { display: flex; gap: 10px; max-width: 420px; }
+.sku-input-wrap input {
+    font-size: 18px; font-weight: 700; letter-spacing: 1px;
+    border: 2px solid var(--border); border-radius: 10px; padding: 10px 16px;
+    flex: 1; transition: border-color 0.2s;
+}
+.sku-input-wrap input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.btn-fetch {
+    background: var(--primary); color: white; border: none; border-radius: 10px;
+    padding: 10px 24px; font-weight: 700; font-size: 15px; cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+.btn-fetch:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.product-card {
+    display: grid; grid-template-columns: 160px 1fr; gap: 24px;
+    background: var(--surface); border-radius: 12px; padding: 20px;
+    border: 1px solid var(--border); margin-bottom: 20px;
+}
+.product-img {
+    width: 160px; height: 160px; object-fit: cover; border-radius: 10px;
+    border: 1px solid var(--border);
+}
+.product-img-placeholder {
+    width: 160px; height: 160px; border-radius: 10px; background: #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; color: #94a3b8;
+}
+.product-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.meta-item { }
+.meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
+.meta-value { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 2px; }
+.product-title { grid-column: 1/-1; }
+.price-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;
+}
+.price-flag-card {
+    background: white; border: 2px solid var(--border); border-radius: 10px;
+    padding: 12px; text-align: center; transition: border-color 0.2s;
+}
+.price-flag-card.active { border-color: var(--primary); background: #f0f0ff; }
+.price-flag { font-size: 22px; display: block; margin-bottom: 4px; }
+.price-country { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.price-amount { font-size: 18px; font-weight: 800; color: var(--text); }
+.site-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.site-check-label {
+    display: flex; align-items: center; gap: 8px; padding: 10px 18px;
+    border: 2px solid var(--border); border-radius: 10px; cursor: pointer;
+    font-weight: 600; font-size: 14px; transition: all 0.2s; user-select: none;
+    background: white;
+}
+.site-check-label:has(input:checked) { border-color: var(--primary); background: #f0f0ff; color: var(--primary); }
+.site-check-label input { display: none; }
+.listed-badge { font-size: 10px; background: var(--success); color: white; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.form-section { margin-bottom: 20px; }
+.form-section label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-section input, .form-section select {
+    border: 2px solid var(--border); border-radius: 10px; padding: 10px 14px;
+    font-size: 15px; font-weight: 600; width: 100%; transition: border-color 0.2s;
+}
+.form-section input:focus, .form-section select:focus {
+    border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+.action-bar {
+    display: flex; gap: 12px; align-items: center; padding: 20px 24px;
+    background: var(--surface); border-top: 1px solid var(--border);
+}
+.btn-verify {
+    background: white; color: var(--warning); border: 2px solid var(--warning);
+    border-radius: 10px; padding: 10px 24px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-verify:hover { background: #fffbeb; }
+.btn-list {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; border: none; border-radius: 10px; padding: 10px 28px;
+    font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+.btn-list:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
+.results-table th { background: #1e1b4b; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.alert-modern {
+    border-radius: 12px; padding: 14px 20px; margin-bottom: 20px;
+    font-weight: 600; border: none; font-size: 14px;
+}
+.alert-modern.success { background: #d1fae5; color: #065f46; }
+.alert-modern.error { background: #fee2e2; color: #991b1b; }
+
+@media (max-width: 768px) {
+    .page-header { padding: 18px 16px !important; }
+    .page-header h2 { font-size: 18px !important; }
+    .product-card { grid-template-columns: 1fr !important; gap: 16px !important; }
+    .product-img, .product-img-placeholder { width: 100% !important; height: 200px !important; }
+    .product-meta { grid-template-columns: 1fr 1fr !important; }
+    .price-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    .sku-input-wrap { flex-direction: column !important; max-width: 100% !important; }
+    .sku-input-wrap input { font-size: 15px !important; }
+    .btn-fetch { width: 100% !important; padding: 12px !important; }
+    .action-bar { flex-direction: column !important; align-items: stretch !important; }
+    .action-bar > div { margin-left: 0 !important; flex-direction: column !important; }
+    .btn-verify, .btn-list { width: 100% !important; text-align: center !important; padding: 12px !important; }
+    .site-checkboxes { gap: 8px !important; }
+    .site-check-label { padding: 8px 12px !important; font-size: 13px !important; }
+    .step-body { padding: 16px !important; }
+    .step-header { padding: 12px 16px !important; }
+}
+@media (max-width: 480px) {
+    .price-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .product-meta { grid-template-columns: 1fr !important; }
+}
+</style>
+
+<!-- Header -->
+<div class="page-header">
+    <h2>🚀 Create eBay Listing</h2>
+    <p>Fetch product data, set prices, and publish to multiple eBay sites in one click</p>
+</div>
+
+{% if message %}
+<div class="alert-modern {% if 'Error' in message %}error{% else %}success{% endif %}">
+    {% if 'Error' in message %}⚠️{% else %}✅{% endif %} {{ message }}
+</div>
+{% endif %}
+
+<!-- Step 1: SKU -->
+<div class="step-card">
+    <div class="step-header">
+        <div class="step-num">1</div>
+        <h5>Fetch Product by SKU</h5>
+    </div>
+    <div class="step-body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="step" value="1">
+            <div class="sku-input-wrap">
+                <input type="text" name="sku" placeholder="Enter SKU..." list="skuOptions"
+                       value="{% if sheet_data %}{{ sheet_data.sku }}{% endif %}" required
+                       autofocus>
+                <datalist id="skuOptions">
+                    {% for s in sku_list_keys %}<option value="{{ s }}">{% endfor %}
+                </datalist>
+                <button class="btn-fetch" type="submit">Fetch →</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if sheet_data %}
+<!-- Step 2: Product Preview -->
+<div class="step-card">
+    <div class="step-header">
+        <div class="step-num">2</div>
+        <h5>Product Preview — SKU <strong>{{ sheet_data.sku }}</strong></h5>
+    </div>
+    <div class="step-body">
+        <div class="product-card">
+            <div>
+                {% if sheet_data.photo %}
+                <img src="{{ sheet_data.photo }}" class="product-img" onerror="this.style.display='none'">
+                {% else %}
+                <div class="product-img-placeholder">📦</div>
+                {% endif %}
+            </div>
+            <div>
+                <div class="meta-item product-title" style="margin-bottom:14px;">
+                    <div class="meta-label">Title</div>
+                    <div class="meta-value" style="font-size:16px;">{{ sheet_data.title }}</div>
+                </div>
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Category ID</div>
+                        <div class="meta-value">{{ sheet_data.cat_id }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Store Category</div>
+                        <div class="meta-value">{{ sheet_data.store_cat }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Stock</div>
+                        <div class="meta-value">
+                            <span style="color:{% if sheet_data.stock > 5 %}#10b981{% else %}#ef4444{% endif %}">
+                                {{ sheet_data.stock }} units
+                            </span>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Base Price</div>
+                        <div class="meta-value" style="color:#6366f1;">€{{ sheet_data.price }}</div>
+                    </div>
+                    <div class="meta-item" style="grid-column:1/-1;">
+                        <div class="meta-label">Existing Listings</div>
+                        <div class="meta-value" style="margin-top:4px;">
+                            {% if sheet_data.existing %}
+                                {% for s in sheet_data.existing %}
+                                <span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;margin-right:4px;">
+                                    {% if s == 'ireland' %}🇮🇪{% elif s == 'uk' %}🇬🇧{% elif s == 'usa' %}🇺🇸{% elif s == 'canada' %}🇨🇦{% elif s == 'australia' %}🇦🇺{% endif %}
+                                    {{ s|title }}
+                                </span>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color:#f59e0b;font-size:13px;">⚠️ No listings yet</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Step 3: Configure & List -->
+<div class="step-card">
+    <div class="step-header">
+        <div class="step-num">3</div>
+        <h5>Configure & Publish</h5>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="2">
+        <input type="hidden" name="sku" value="{{ sheet_data.sku }}">
+        <input type="hidden" name="cat_id" value="{{ sheet_data.cat_id }}">
+        <input type="hidden" name="title" value="{{ sheet_data.title }}">
+        <input type="hidden" name="photo" value="{{ sheet_data.photo }}">
+        <input type="hidden" name="store_cat" value="{{ sheet_data.store_cat }}">
+
+        <div class="step-body">
+            <!-- Price + Details -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="form-section">
+                        <label>EUR Price (€)</label>
+                        <input type="number" step="0.01" name="eur_price"
+                               value="{{ sheet_data.price }}" required
+                               oninput="calcPrices(this.value)">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-section">
+                        <label>Size / Measurement</label>
+                        <input type="text" name="size" placeholder="e.g. 13cm / 5 inches" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-section">
+                        <label>Quantity</label>
+                        <input type="number" name="qty" value="{{ sheet_data.stock }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Price Preview -->
+            <div class="price-grid" id="priceGrid">
+                <div class="price-flag-card active">
+                    <span class="price-flag">🇮🇪</span>
+                    <div class="price-country">Ireland</div>
+                    <div class="price-amount" id="p_eur">€{{ sheet_data.price }}</div>
+                </div>
+                <div class="price-flag-card">
+                    <span class="price-flag">🇬🇧</span>
+                    <div class="price-country">UK</div>
+                    <div class="price-amount" id="p_uk">—</div>
+                </div>
+                <div class="price-flag-card">
+                    <span class="price-flag">🇺🇸</span>
+                    <div class="price-country">USA</div>
+                    <div class="price-amount" id="p_us">—</div>
+                </div>
+                <div class="price-flag-card">
+                    <span class="price-flag">🇨🇦</span>
+                    <div class="price-country">Canada</div>
+                    <div class="price-amount" id="p_can">—</div>
+                </div>
+                <div class="price-flag-card">
+                    <span class="price-flag">🇦🇺</span>
+                    <div class="price-country">Australia</div>
+                    <div class="price-amount" id="p_aus">—</div>
+                </div>
+            </div>
+
+            <!-- Site Selection -->
+            <div class="form-section">
+                <label>Select Sites to List On</label>
+                <div class="site-checkboxes">
+                    {% for site in sheet_data.sites %}
+                    <label class="site-check-label">
+                        <input type="checkbox" name="sites" value="{{ site }}"
+                               {% if site not in sheet_data.existing %}checked{% endif %}>
+                        {% if site == 'ireland' %}🇮🇪{% elif site == 'uk' %}🇬🇧{% elif site == 'usa' %}🇺🇸{% elif site == 'canada' %}🇨🇦{% elif site == 'australia' %}🇦🇺{% endif %}
+                        {{ site|title }}
+                        {% if site in sheet_data.existing %}<span class="listed-badge">LISTED</span>{% endif %}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <a href="/dashboard/listings/" class="btn btn-secondary">← Back</a>
+            <div style="margin-left:auto; display:flex; gap:10px;">
+                <button type="submit" name="verify_only" value="1" class="btn-verify">🔍 Verify Only</button>
+                <button type="submit" name="verify_only" value="0" class="btn-list">🚀 Create Listing</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% else %}
+<a href="/dashboard/listings/" class="btn btn-secondary">← Back to Listings</a>
+{% endif %}
+
+{% if results %}
+<div class="step-card">
+    <div class="step-header">
+        <div class="step-num">✓</div>
+        <h5>Results</h5>
+    </div>
+    <div class="step-body p-0">
+        <table class="table mb-0 results-table">
+            <thead>
+                <tr><th class="ps-3">Site</th><th>Item ID</th><th>Price</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            {% for r in results %}
+            <tr class="{% if r.success %}table-success{% else %}table-danger{% endif %}">
+                <td class="ps-3 fw-bold">{{ r.site }}</td>
+                <td><code>{{ r.itemid|default:'-' }}</code></td>
+                <td>{{ r.price|default:'-' }}</td>
+                <td>{{ r.status }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<script>
+let rates = {eur:1.00, uk:0.87, us:1.16, can:1.62, aus:1.74};
+fetch('https://api.exchangerate-api.com/v4/latest/EUR')
+    .then(r => r.json())
+    .then(data => {
+        rates.uk = data.rates.GBP;
+        rates.us = data.rates.USD;
+        rates.can = data.rates.CAD;
+        rates.aus = data.rates.AUD;
+        calcPrices(document.querySelector('[name=eur_price]') ? document.querySelector('[name=eur_price]').value : 0);
+    }).catch(() => {});
+
+function calcPrices(p) {
+    p = parseFloat(p) || 0;
+    document.getElementById('p_eur').textContent = '€' + (p * rates.eur).toFixed(2);
+    document.getElementById('p_uk').textContent = '£' + (p * rates.uk).toFixed(2);
+    document.getElementById('p_us').textContent = '$' + (p * rates.us).toFixed(2);
+    document.getElementById('p_can').textContent = 'C$' + (p * rates.can).toFixed(2);
+    document.getElementById('p_aus').textContent = 'A$' + (p * rates.aus).toFixed(2);
+}
+calcPrices({{ sheet_data.price|default:0 }});
+</script>
+{% endblock %}

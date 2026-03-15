@@ -61,7 +61,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=8,decimal_places=2, null=True,blank=True)
     stock = models.PositiveIntegerField()
     sku = models.CharField(max_length=50, blank=True, null=True)
-    image = models.ImageField(upload_to='products/', blank=True)
+    image = models.CharField(max_length=500, blank=True, default='')
 
     def __str__(self):
         return self.name

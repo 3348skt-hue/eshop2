@@ -1,0 +1,38 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h2 class="mb-4">Update Stock on eBay Listings</h2>
+<div class="card p-4 mb-4" style="max-width:500px">
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">SKU</label>
+            <input type="text" class="form-control" name="sku" placeholder="e.g. 13530" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Manual Quantity <small class="text-muted">(leave blank to use inventory stock)</small></label>
+            <input type="number" class="form-control" name="manual_qty" placeholder="Leave blank = use inventory stock">
+        </div>
+        <button class="btn btn-primary w-100">Update Stock</button>
+    </form>
+</div>
+
+{% if message %}
+<div class="alert {% if 'Error' in message %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>
+{% endif %}
+
+{% if results %}
+<table class="table table-bordered table-sm" style="max-width:500px">
+    <thead class="table-dark"><tr><th>Site</th><th>Item ID</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in results %}
+    <tr class="{% if r.success %}table-success{% else %}table-danger{% endif %}">
+        <td>{{ r.site }}</td>
+        <td>{{ r.itemid }}</td>
+        <td>{{ r.status }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+<a href="/dashboard/listings/" class="btn btn-secondary mt-2">← Back</a>
+{% endblock %}

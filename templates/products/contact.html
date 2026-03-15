@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - MAK Supplies</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #800020;
+            --secondary-color: #a0002a;
+            --accent-color: #f4a261;
+            --dark: #1a1a1a;
+            --light-bg: #f8f9fa;
+            --text-dark: #2c3e50;
+            --border-color: #e8e8e8;
+            --navy: #1a2f4a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background-color: var(--light-bg); color: var(--text-dark); }
+
+        /* NAVBAR */
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .navbar-brand { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: white !important; letter-spacing: 1px; }
+        .nav-link { color: white !important; text-decoration: none; font-weight: 500; transition: all 0.3s ease; padding: 8px 0; border-bottom: 2px solid transparent; }
+        .nav-link:hover { border-bottom-color: var(--accent-color); }
+        .cart-btn { background: white; color: var(--primary-color); padding: 10px 25px; border-radius: 50px; border: none; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .cart-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); color: var(--primary-color); }
+
+        /* HERO */
+        .contact-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--primary-color) 100%);
+            padding: 80px 0 60px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .contact-hero::before {
+            content: '';
+            position: absolute;
+            width: 600px; height: 600px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+            top: -200px; right: -100px;
+        }
+        .contact-hero::after {
+            content: '';
+            position: absolute;
+            width: 400px; height: 400px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+            bottom: -150px; left: -50px;
+        }
+        .contact-hero h1 { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; margin-bottom: 15px; position: relative; z-index: 1; }
+        .contact-hero p { font-size: 1.2rem; opacity: 0.9; position: relative; z-index: 1; }
+
+        /* STATS BAR */
+        .stats-bar {
+            background: white;
+            padding: 30px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        .stat-box { text-align: center; padding: 10px; border-right: 1px solid var(--border-color); }
+        .stat-box:last-child { border-right: none; }
+        .stat-box .number { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); display: block; }
+        .stat-box .label { font-size: 0.9rem; color: #888; }
+
+        /* MAIN SECTION */
+        .contact-section { padding: 70px 0; }
+
+        /* INFO CARDS */
+        .info-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .info-card:hover { transform: translateX(5px); border-left-color: var(--primary-color); box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        .info-icon {
+            width: 55px; height: 55px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .info-content h5 { font-weight: 600; margin-bottom: 5px; color: var(--dark); }
+        .info-content p { color: #666; margin: 0; font-size: 0.95rem; line-height: 1.6; }
+        .info-content a { color: var(--primary-color); text-decoration: none; }
+        .info-content a:hover { text-decoration: underline; }
+
+        /* BUSINESS HOURS */
+        .hours-card {
+            background: linear-gradient(135deg, var(--navy) 0%, #2a4a6a 100%);
+            border-radius: 16px;
+            padding: 30px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .hours-card h5 { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .hours-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; }
+        .hours-row:last-child { border-bottom: none; }
+        .hours-row .day { opacity: 0.8; }
+        .hours-row .time { font-weight: 600; }
+        .hours-row .closed { color: #f4a261; }
+
+        /* FORM */
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 45px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+        }
+        .form-card h3 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 8px; color: var(--dark); }
+        .form-card .subtitle { color: #888; margin-bottom: 35px; font-size: 0.95rem; }
+
+        .form-floating { margin-bottom: 20px; }
+        .form-floating .form-control, .form-floating .form-select {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: var(--light-bg);
+        }
+        .form-floating .form-control:focus, .form-floating .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(128,0,32,0.08);
+            background: white;
+        }
+        .form-floating label { color: #999; padding: 15px 20px; }
+
+        .subject-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .subject-btn {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--light-bg);
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+        }
+        .subject-btn:hover, .subject-btn.selected {
+            border-color: var(--primary-color);
+            background: rgba(128,0,32,0.05);
+            color: var(--primary-color);
+        }
+        .subject-label { font-weight: 600; margin-bottom: 12px; color: var(--dark); font-size: 0.95rem; }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(128,0,32,0.35); }
+        .submit-btn:active { transform: translateY(0); }
+
+        /* SUCCESS / ERROR */
+        .alert-success-custom {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            display: flex; align-items: center; gap: 15px;
+            font-weight: 500;
+        }
+        .alert-error-custom {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            display: flex; align-items: center; gap: 15px;
+            font-weight: 500;
+        }
+        .alert-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+        /* MAP PLACEHOLDER */
+        .map-section { padding: 0 0 70px; }
+        .map-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+        }
+        .map-header { background: var(--navy); color: white; padding: 20px 30px; display: flex; align-items: center; gap: 12px; }
+        .map-header h5 { margin: 0; font-weight: 600; }
+        .map-frame { width: 100%; height: 350px; border: none; }
+
+        /* FOOTER */
+        .footer { background: var(--dark); color: white; padding: 40px 0 20px; margin-top: 0; }
+        .footer-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; margin-bottom: 30px; }
+        .footer-section h4 { font-family: 'Playfair Display', serif; margin-bottom: 20px; }
+        .footer-section ul { list-style: none; padding: 0; }
+        .footer-section ul li { margin-bottom: 10px; }
+        .footer-section a { color: rgba(255,255,255,0.7); text-decoration: none; transition: color 0.3s ease; }
+        .footer-section a:hover { color: white; }
+        .footer-bottom { text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+
+        @media (max-width: 768px) {
+            .contact-hero h1 { font-size: 2rem; }
+            .form-card { padding: 25px; }
+            .subject-grid { grid-template-columns: 1fr; }
+            .stat-box { border-right: none; border-bottom: 1px solid var(--border-color); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar-custom">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-3">
+            <a class="navbar-brand" href="/">MAK Supplies</a>
+            <div class="d-none d-md-flex" style="gap:30px;">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/categories/" class="nav-link">Categories</a>
+                <a href="/products/" class="nav-link">All Products</a>
+                <a href="/contact/" class="nav-link" style="border-bottom: 2px solid white;">Contact</a>
+            </div>
+            <a href="/cart/" class="cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Cart</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="contact-hero">
+    <div class="container">
+        <h1><i class="fas fa-headset me-3"></i>Get In Touch</h1>
+        <p>We're here to help. Reach out and we'll respond within 24 hours.</p>
+    </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+    <div class="container">
+        <div class="row">
+            <div class="col-3 stat-box">
+                <span class="number">24h</span>
+                <span class="label">Response Time</span>
+            </div>
+            <div class="col-3 stat-box">
+                <span class="number">700+</span>
+                <span class="label">Products</span>
+            </div>
+            <div class="col-3 stat-box">
+                <span class="number">5★</span>
+                <span class="label">Customer Rating</span>
+            </div>
+            <div class="col-3 stat-box">
+                <span class="number">Fast</span>
+                <span class="label">EU Shipping</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTACT SECTION -->
+<section class="contact-section">
+    <div class="container">
+        <div class="row g-5">
+
+            <!-- LEFT: INFO -->
+            <div class="col-lg-4">
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="info-content">
+                        <h5>Email Us</h5>
+                        <p><a href="mailto:3348skt@gmail.com">3348skt@gmail.com</a></p>
+                        <p style="font-size:0.85rem; margin-top:4px;">We reply within 24 hours</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-phone"></i></div>
+                    <div class="info-content">
+                        <h5>Call Us</h5>
+                        <p><a href="tel:+353860834385">+353 86 083 4385</a></p>
+                        <p style="font-size:0.85rem; margin-top:4px;">Mon–Fri, 9am–6pm IST</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="info-content">
+                        <h5>Our Address</h5>
+                        <p>30 Waterside View<br>Malahide, Dublin<br>Ireland</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon"><i class="fas fa-certificate"></i></div>
+                    <div class="info-content">
+                        <h5>Registered Business</h5>
+                        <p>Registration No. 521781<br>Ireland</p>
+                    </div>
+                </div>
+
+                <!-- HOURS -->
+                <div class="hours-card mt-2">
+                    <h5><i class="fas fa-clock"></i> Business Hours</h5>
+                    <div class="hours-row"><span class="day">Monday – Friday</span><span class="time">9:00 – 18:00</span></div>
+                    <div class="hours-row"><span class="day">Saturday</span><span class="time">10:00 – 14:00</span></div>
+                    <div class="hours-row"><span class="day">Sunday</span><span class="time closed">Closed</span></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: FORM -->
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <h3>Send Us a Message</h3>
+                    <p class="subtitle">Fill in the form below and our team will get back to you shortly.</p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if 'success' in message.tags %}
+                            <div class="alert-success-custom">
+                                <span class="alert-icon"><i class="fas fa-check-circle"></i></span>
+                                <div>
+                                    <strong>Message Sent!</strong><br>
+                                    Thank you for contacting MAK Supplies. We'll get back to you within 24 hours.
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert-error-custom">
+                                <span class="alert-icon"><i class="fas fa-exclamation-circle"></i></span>
+                                <div>
+                                    <strong>Something went wrong.</strong><br>
+                                    Please try again or email us directly at 3348skt@gmail.com
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" action="/contact/" id="contactForm">
+                        {% csrf_token %}
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Your Name" required>
+                                    <label for="name"><i class="fas fa-user me-2"></i>Full Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                                    <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone">
+                                    <label for="phone"><i class="fas fa-phone me-2"></i>Phone (optional)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-select" id="subject" name="subject" required style="border:2px solid #e8e8e8; border-radius:12px; padding:14px 20px; font-size:0.95rem; background:#f8f9fa; height:100%;">
+                                    <option value="" disabled selected>Select a topic</option>
+                                    <option value="Product Inquiry">Product Inquiry</option>
+                                    <option value="Order Status">Order Status</option>
+                                    <option value="Shipping & Delivery">Shipping & Delivery</option>
+                                    <option value="Returns & Refunds">Returns & Refunds</option>
+                                    <option value="Bulk Order / Wholesale">Bulk Order / Wholesale</option>
+                                    <option value="Technical Support">Technical Support</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <textarea class="form-control" id="message" name="message" placeholder="Message" style="height:160px;" required></textarea>
+                            <label for="message"><i class="fas fa-comment me-2"></i>Your Message</label>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <i class="fas fa-paper-plane"></i>
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- MAP -->
+<section class="map-section">
+    <div class="container">
+        <div class="map-card">
+            <div class="map-header">
+                <i class="fas fa-map-marked-alt fa-lg"></i>
+                <h5>Find Us — Malahide, Dublin, Ireland</h5>
+            </div>
+            <iframe class="map-frame"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2381.234!2d-6.154!3d53.451!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTPCsDI3JzAzLjYiTiA2wrAwOScxNC40Ilc!5e0!3m2!1sen!2sie!4v1234567890"
+                allowfullscreen="" loading="lazy">
+            </iframe>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About MAK Supplies</h4>
+                <p>Your trusted source for premium medical equipment and surgical instruments. Quality products, fast shipping, exceptional service.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/categories/">Categories</a></li>
+                    <li><a href="/products/">All Products</a></li>
+                    <li><a href="/cart/">Cart</a></li>
+                    
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Customer Service</h4>
+                <ul>
+                    <li><a href="/contact/">Contact Us</a></li>
+                    <li><a href="/shipping/">Shipping Info</a></li>
+                    <li><a href="/returns/">Returns</a></li>
+                    
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <ul>
+                    <li><i class="fas fa-envelope"></i> 3348skt@gmail.com</li>
+                    <li><i class="fas fa-phone"></i> +353 86 083 4385</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Malahide, Dublin, Ireland</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 MAK Supplies. All rights reserved.</p>
+            <p>Registered in Ireland. Registration No. 521781</p>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('contactForm').addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+    });
+</script>
+</body>
+</html>

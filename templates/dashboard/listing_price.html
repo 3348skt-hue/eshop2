@@ -1,0 +1,64 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h2 class="mb-4">Update Price on eBay Listings</h2>
+
+<div class="card p-4 mb-4" style="max-width:500px">
+    <form method="post" id="priceForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">SKU</label>
+            <input type="text" class="form-control" name="sku" placeholder="e.g. 13530" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">EUR Price (€)</label>
+            <input type="number" step="0.01" class="form-control" name="eur_price" id="eurPrice" placeholder="0.00" required oninput="calcPrices()">
+        </div>
+        <div class="card bg-light p-3 mb-3" id="preview" style="display:none">
+            <small class="text-muted">Converted prices:</small>
+            <div class="d-flex flex-wrap gap-3 mt-1">
+                <span>🇮🇪 EUR: <strong id="p_eur"></strong></span>
+                <span>🇬🇧 GBP: <strong id="p_uk"></strong></span>
+                <span>🇺🇸 USD: <strong id="p_us"></strong></span>
+                <span>🇨🇦 CAD: <strong id="p_can"></strong></span>
+                <span>🇦🇺 AUD: <strong id="p_aus"></strong></span>
+            </div>
+        </div>
+        <button class="btn btn-danger w-100">Update Prices</button>
+    </form>
+</div>
+
+{% if message %}
+<div class="alert {% if 'Error' in message %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>
+{% endif %}
+
+{% if results %}
+<table class="table table-bordered table-sm" style="max-width:500px">
+    <thead class="table-dark"><tr><th>Site</th><th>Price</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in results %}
+    <tr class="{% if r.success %}table-success{% else %}table-danger{% endif %}">
+        <td>{{ r.site }}</td>
+        <td>{{ r.price }}</td>
+        <td>{{ r.status }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+<a href="/dashboard/listings/" class="btn btn-secondary mt-2">← Back</a>
+
+<script>
+const rates = {eur:1.00, uk:0.8516, us:1.0847, can:1.4827, aus:1.6375};
+function calcPrices() {
+    const p = parseFloat(document.getElementById('eurPrice').value) || 0;
+    if (p > 0) {
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('p_eur').textContent = '€' + (p * rates.eur).toFixed(2);
+        document.getElementById('p_uk').textContent = '£' + (p * rates.uk).toFixed(2);
+        document.getElementById('p_us').textContent = '$' + (p * rates.us).toFixed(2);
+        document.getElementById('p_can').textContent = 'C$' + (p * rates.can).toFixed(2);
+        document.getElementById('p_aus').textContent = 'A$' + (p * rates.aus).toFixed(2);
+    }
+}
+</script>
+{% endblock %}

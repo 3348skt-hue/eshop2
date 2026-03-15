@@ -27,9 +27,8 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("order_number", "id", "full_name", "email", "total_amount", "paid",
-                    "created_at")
-    list_filter = ("paid", "created_at")
+    list_display = ("order_number", "id", "full_name", "email", "total_amount", "paid", "status", "created_at")
+    list_filter = ("paid", "status", "created_at")
     search_fields = ("email", "full_name", "order_number")
 
     exclude = ("shipping_address",)
@@ -41,6 +40,18 @@ class OrderAdmin(admin.ModelAdmin):
         "phone",
         "formatted_shipping_address",
         "stripe_payment_intent",
+        "created_at",
+        "updated_at",
+    )
+    fields = (
+        "order_number",
+        "status",
+        "full_name",
+        "email",
+        "phone",
+        "formatted_shipping_address",
+        "stripe_payment_intent",
+        "paid",
         "created_at",
         "updated_at",
     )
@@ -68,6 +79,6 @@ class OrderAdmin(admin.ModelAdmin):
         {addr.get('city', '')} {addr.get('postal_code', '')}<br>
         {addr.get('country', '')}
         """
-        return format_html(address_html)
+        return format_html("{}" , address_html)
 
     formatted_shipping_address.short_description = "Shipping Address"

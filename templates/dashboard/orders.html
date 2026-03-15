@@ -1,0 +1,261 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+:root { --primary:#2563eb; --success:#16a34a; --warning:#d97706; --border:#e5e7eb; --gray:#6b7280; }
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.page-title { font-size:1.5rem; font-weight:700; color:#111; margin:0; }
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
+.stat-card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 16px; text-align:center; }
+.stat-card .val { font-size:1.6rem; font-weight:800; color:var(--primary); line-height:1; }
+.stat-card .lbl { font-size:0.7rem; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+.toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.toolbar input { border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:.9rem; outline:none; }
+.toolbar input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.btn { border:none; border-radius:8px; padding:8px 16px; font-size:.85rem; font-weight:600; cursor:pointer; transition:all .15s; text-decoration:none; display:inline-block; }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover:not(:disabled) { background:#1d4ed8; }
+.btn-warning { background:#fef3c7; color:var(--warning); border:1px solid #fcd34d; }
+.btn-secondary { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
+.btn-print { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; padding:9px 20px; }
+.btn-print:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,99,235,.3); }
+.table-wrap { background:#fff; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+table.orders-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+table.orders-table thead tr { background:#1e293b; color:#fff; }
+table.orders-table thead th { padding:12px 10px; text-align:left; font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+tbody tr.data-row { border-bottom:1px solid var(--border); transition:background .1s; }
+tbody tr.data-row:hover { background:#f0f7ff; }
+tbody tr.data-row.selected { background:#eff6ff; }
+td { padding:10px; vertical-align:middle; }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
+.badge-success { background:#dcfce7; color:#15803d; }
+.badge-warning { background:#fef9c3; color:#a16207; }
+.badge-secondary { background:#f1f5f9; color:#475569; }
+.badge-info { background:#e0f2fe; color:#0369a1; }
+.customer-cell { cursor:pointer; }
+.customer-cell:hover .cname { color:var(--primary); text-decoration:underline; }
+.cname { font-weight:600; color:#1e293b; }
+.cemail { font-size:.75rem; color:var(--gray); }
+.addr-row td { padding:0 !important; }
+.addr-panel { background:#f8fafc; border-top:2px solid var(--primary); padding:14px 20px; display:flex; gap:24px; align-items:flex-start; }
+.addr-info { line-height:1.8; font-size:.88rem; }
+.addr-actions { display:flex; flex-direction:column; gap:6px; min-width:100px; }
+.addr-actions .btn { font-size:.78rem; padding:6px 12px; }
+.post-form { display:flex; gap:4px; }
+.post-form input { border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:.8rem; }
+.post-form .sbtn { background:#16a34a; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; font-weight:600; }
+.cb-cell { width:36px; text-align:center; }
+input[type=checkbox] { width:16px; height:16px; cursor:pointer; accent-color:var(--primary); }
+
+@media (max-width: 768px) {
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table.orders-table { min-width: 700px; }
+    .hide-mobile { display: none !important; }
+    .toolbar input { width: 100% !important; }
+    .toolbar form { width: 100%; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .post-form { flex-direction: column; gap: 4px; }
+    .post-form input { width: 100% !important; }
+    td, th { padding: 8px 6px !important; font-size: 0.75rem !important; }
+}
+</style>
+
+<div class="page-header">
+  <h1 class="page-title">📦 Orders</h1>
+  <div class="d-flex gap-2">
+    <button class="btn btn-print" id="btnPrint" onclick="printA4()">
+      🖨️ A4 Labels &nbsp;<span id="selBadge" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 8px;">0</span>
+    </button>
+    <button class="btn btn-print" id="btnThermal" onclick="printThermal()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);">
+      🏷️ Thermal &nbsp;<span id="selBadge2" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 8px;">0</span>
+    </button>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="val">{{ orders|length }}</div><div class="lbl">Total Orders</div></div>
+  <div class="stat-card"><div class="val" id="statSel">0</div><div class="lbl">Selected</div></div>
+  <div class="stat-card"><div class="val" id="statVal">€0</div><div class="lbl">Selected Value</div></div>
+  <div class="stat-card"><div class="val" id="statPending">—</div><div class="lbl">Pending</div></div>
+</div>
+
+<div class="toolbar">
+  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <input name="q" value="{{ search }}" placeholder="🔍  Search order, name, SKU, country..." style="width:320px;">
+    <button type="submit" class="btn btn-primary">Search</button>
+    <a href="/dashboard/orders/?unposted=1" class="btn btn-warning">⏳ Unposted</a>
+    <a href="/dashboard/orders/" class="btn btn-secondary">All Orders</a>
+  </form>
+</div>
+
+<div class="table-wrap">
+<table class="orders-table">
+  <thead>
+    <tr>
+      <th class="cb-cell"><input type="checkbox" id="selAll" onchange="toggleAll(this)"></th>
+      <th>Date</th><th>Order ID</th><th>Customer</th><th>SKU</th>
+      <th>Status</th><th>Qty</th><th class="hide-mobile">Country</th><th class="hide-mobile">Curr.</th>
+      <th>Total</th><th class="hide-mobile">Site</th><th class="hide-mobile">Comment</th><th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for o in orders %}
+  <tr class="data-row" data-id="{{ o.0 }}" data-total="{{ o.11|default:0 }}">
+    <td class="cb-cell"><input type="checkbox" class="ocb" onchange="updateSel()" value="{{ o.0 }}" data-name="{{ o.4|escapejs }}" data-s1="{{ o.14|escapejs }}" data-s2="{{ o.15|escapejs }}" data-city="{{ o.16|escapejs }}" data-state="{{ o.17|escapejs }}" data-post="{{ o.18|escapejs }}" data-country="{{ o.8|escapejs }}" data-phone="{{ o.19|escapejs }}"></td>
+    <td style="white-space:nowrap;color:var(--gray);">{{ o.1|slice:":10" }}</td>
+    <td><strong>{{ o.2 }}</strong></td>
+    <td class="customer-cell" onclick="toggleAddr({{ o.0 }})">
+      <div class="cname">{{ o.4 }}</div>
+      <div class="cemail">{{ o.3 }}</div>
+      {% if o.22 >= 5 %}
+        <span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:700;">🥇 VIP</span>
+      {% elif o.22 >= 2 %}
+        <span style="background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:700;">🔄 Returning</span>
+      {% else %}
+        <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:700;">🆕 New</span>
+      {% endif %}
+    </td>
+    <td><span class="badge badge-secondary">{{ o.5 }}</span></td>
+    <td>{% if o.6 %}<span class="badge badge-success">✓ {{ o.6 }}</span>
+        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}</td>
+    <td style="text-align:center;font-weight:600;">{{ o.7 }}</td>
+    <td class="hide-mobile">{{ o.8 }}</td>
+    <td class="hide-mobile"><span class="badge badge-info">{{ o.9 }}</span></td>
+    <td style="font-weight:700;">{{ o.11 }}</td>
+    <td class="hide-mobile" style="color:var(--gray);">{{ o.12 }}</td>
+    <td class="hide-mobile" style="color:var(--gray);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ o.13 }}</td>
+    <td>
+      <form method="post" action="/dashboard/orders/mark-posted/{{ o.0 }}/" class="post-form">
+        {% csrf_token %}
+        <input name="tracking_number" placeholder="Tracking #" value="{{ o.21|default:'' }}" style="width:110px;">
+        <input type="date" name="posted_date" style="width:118px;">
+        <button type="submit" class="sbtn">✓ Save</button>
+      </form>
+      {% if o.21 %}
+      <a href="https://t.17track.net/en#nums={{ o.21 }}" target="_blank" style="font-size:0.75rem; color:var(--primary); text-decoration:none; margin-top:4px; display:block;">
+        🔍 Track on 17track
+      </a>
+      {% endif %}
+      <form method="post" action="/dashboard/orders/update-status/{{ o.0 }}/" style="margin-top:4px;">
+        {% csrf_token %}
+        <select name="status" onchange="this.form.submit()" style="border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:0.78rem; cursor:pointer; accent-color:var(--primary);">
+          <option value="processing" {% if o.20 == 'processing' or not o.20 %}selected{% endif %}>⚙️ Processing</option>
+          <option value="posted" {% if o.20 == 'posted' %}selected{% endif %}>📦 Posted</option>
+          <option value="in_transit" {% if o.20 == 'in_transit' %}selected{% endif %}>🚚 In Transit</option>
+          <option value="delivered" {% if o.20 == 'delivered' %}selected{% endif %}>✅ Delivered</option>
+          <option value="cancelled" {% if o.20 == 'cancelled' %}selected{% endif %}>❌ Cancelled</option>
+        </select>
+      </form>
+    </td>
+  </tr>
+  <tr id="addr-{{ o.0 }}" style="display:none;">
+    <td colspan="13">
+      <div class="addr-panel">
+        <div class="addr-info"
+          data-name="{{ o.4|escapejs }}"
+          data-s1="{{ o.14|escapejs }}"
+          data-s2="{{ o.15|escapejs }}"
+          data-city="{{ o.16|escapejs }}"
+          data-state="{{ o.17|escapejs }}"
+          data-post="{{ o.18|escapejs }}"
+          data-country="{{ o.8|escapejs }}"
+          data-phone="{{ o.19|escapejs }}">
+          <strong>{{ o.4 }}</strong><br>
+          {% if o.14 %}{{ o.14 }}<br>{% endif %}
+          {% if o.15 %}{{ o.15 }}<br>{% endif %}
+          {% if o.16 and o.16 != "None" %}{{ o.16 }}{% endif %}{% if o.17 and o.17 != "None" %}, {{ o.17 }}{% endif %}{% if o.18 and o.18 != "None" %} {{ o.18 }}{% endif %}<br>
+          <strong>{{ o.8 }}</strong>
+          {% if o.19 %}<br>📞 {{ o.19 }}{% endif %}
+        </div>
+        <div class="addr-actions">
+          <button class="btn btn-primary" onclick="copyAddr({{ o.0 }})">📋 Copy</button>
+          <button class="btn btn-secondary" onclick="toggleAddr({{ o.0 }})">✕ Close</button>
+        </div>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div id="print-area" style="display:none;"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btnPrint').disabled = true;
+  document.getElementById('btnThermal').disabled = true;
+  document.getElementById('statPending').textContent = document.querySelectorAll('.badge-warning').length;
+});
+function toggleAll(cb) {
+  document.querySelectorAll('.ocb').forEach(c => c.checked = cb.checked);
+  updateSel();
+}
+function updateSel() {
+  const checked = document.querySelectorAll('.ocb:checked');
+  const count = checked.length;
+  document.getElementById('selBadge').textContent = count;
+  document.getElementById('statSel').textContent = count;
+  document.getElementById('btnPrint').disabled = count === 0;
+  document.getElementById('btnThermal').disabled = count === 0;
+  document.getElementById('selBadge2').textContent = count;
+  let total = 0;
+  document.querySelectorAll('.ocb').forEach(cb => {
+    const row = cb.closest('tr');
+    if (cb.checked) { row.classList.add('selected'); total += parseFloat(row.dataset.total || 0); }
+    else row.classList.remove('selected');
+  });
+  document.getElementById('statVal').textContent = '€' + total.toFixed(2);
+}
+function toggleAddr(id) {
+  const row = document.getElementById('addr-' + id);
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+function copyAddr(id) {
+  const d = document.querySelector('#addr-' + id + ' .addr-info').dataset;
+  const parts = [d.name, d.s1, d.s2, d.city + (d.state ? ', ' + d.state : ''), d.post, d.country, d.phone ? '📞 ' + d.phone : ''].filter(x => x && x.trim());
+  navigator.clipboard.writeText(parts.join('\n')).then(() => alert('Address copied!'));
+}
+
+function printA4() {
+  const checked = document.querySelectorAll('.ocb:checked');
+  if (!checked.length) return;
+  let labels = [];
+  checked.forEach(cb => {
+    const d = cb.dataset;
+    const clean = v => (!v || v.trim()==='' || v.trim()==='None') ? '' : v.trim();
+    const addrLines = [clean(d.s1), clean(d.s2), (clean(d.city) + (clean(d.state) ? ', '+clean(d.state) : '')), clean(d.post)].filter(x => x);
+    labels.push({ name: clean(d.name), addr: addrLines, country: clean(d.country), phone: clean(d.phone) });
+  });
+  while (labels.length % 8 !== 0) labels.push(null);
+  function labelCell(lb) {
+    if (!lb) return '<td></td>';
+    var ph = lb.phone ? '<div class="lphone">&#9990; ' + lb.phone + '</div>' : '';
+    return '<td><div class="lname">' + lb.name + '</div><div class="laddr">' + lb.addr.join('<br>') + '</div><div class="lcountry">' + lb.country + '</div>' + ph + '</td>';
+  }
+  var pages = '';
+  for (var p = 0; p < labels.length; p += 8) {
+    var chunk = labels.slice(p, p + 8);
+    var rows = '';
+    for (var r = 0; r < 4; r++) {
+      rows += '<tr>' + labelCell(chunk[r*2]) + labelCell(chunk[r*2+1]) + '</tr>';
+    }
+    pages += '<table>' + rows + '</table>';
+  }
+  var pw = window.open('', '_blank');
+  pw.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Labels</title><style>@page{size:A4 portrait;margin:0;}*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;}table{width:100vw;height:100vh;border-collapse:collapse;table-layout:fixed;page-break-after:always;}td{width:50%;height:25vh;border:1.5px solid #000;padding:12px 16px;vertical-align:middle;overflow:hidden;}.lname{font-size:15pt;font-weight:700;color:#000;margin-bottom:5px;line-height:1.2;}.laddr{font-size:10pt;color:#222;line-height:1.7;}.lcountry{font-size:15pt;font-weight:900;color:#000;text-transform:uppercase;letter-spacing:2px;margin-top:6px;}.lphone{font-size:9pt;color:#333;margin-top:5px;padding-top:4px;border-top:1px solid #ccc;}</style></head><body>' + pages + '</body></html>');
+  pw.document.close();
+  setTimeout(function(){ pw.print(); }, 400);
+}
+
+function printThermal() {
+  const checked = document.querySelectorAll('.ocb:checked');
+  if (!checked.length) return;
+  var ids = [];
+  checked.forEach(function(cb) { ids.push(cb.value); });
+  window.location.href = '/dashboard/orders/thermal-png/?ids=' + ids.join(',');
+}
+
+</script>
+{% endblock %}

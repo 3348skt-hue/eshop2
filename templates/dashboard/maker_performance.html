@@ -1,0 +1,174 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+@media (max-width: 767px) {
+    .page-header { padding:16px !important; }
+    .page-header h2 { font-size:18px !important; }
+    .stat-value { font-size:18px !important; }
+    .maker-card { padding:14px !important; }
+    .maker-card > div { flex-direction:column !important; }
+    .grade { width:36px !important; height:36px !important; font-size:18px !important; }
+    .metric-box { min-width:60px !important; padding:8px !important; }
+    .metric-box .val { font-size:16px !important; }
+    #makerSearch { max-width:100% !important; }
+    .maker-card div[style*="margin-left:auto"] { margin-left:0 !important; margin-top:8px; }
+}
+</style>
+
+<style>
+:root { --maroon:#a91b2e; --border:#e2e8f0; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; padding:22px 28px; border-radius:14px; margin-bottom:22px; box-shadow:0 8px 24px rgba(107,15,26,0.3); display:flex; align-items:center; gap:16px; }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.stat-card { background:white; border-radius:12px; padding:18px 22px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+.stat-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.stat-value { font-size:24px; font-weight:800; margin-top:4px; }
+.maker-card { background:white; border-radius:14px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); padding:20px; margin-bottom:16px; }
+.grade { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; flex-shrink:0; }
+.progress-bar-track { background:#f1f5f9; border-radius:6px; height:8px; flex:1; }
+.progress-bar-fill { border-radius:6px; height:8px; }
+.metric-box { background:#f8fafc; border-radius:10px; padding:12px 16px; text-align:center; flex:1; }
+.metric-box .val { font-size:20px; font-weight:800; }
+.metric-box .lbl { font-size:10px; font-weight:700; text-transform:uppercase; color:#64748b; margin-top:2px; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h2>🏆 Maker Performance Dashboard</h2>
+        <p>Fulfillment rate, outstanding balance and stock metrics per maker</p>
+    </div>
+</div>
+
+<!-- Overall Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Total Makers</div>
+            <div class="stat-value" style="color:#6b0f1a;">{{ total_makers }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Total POs</div>
+            <div class="stat-value" style="color:#0284c7;">{{ total_pos }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Units Ordered</div>
+            <div class="stat-value" style="color:#64748b;">{{ total_ordered }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Units Received</div>
+            <div class="stat-value" style="color:#16a34a;">{{ total_received }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Overall Fulfillment</div>
+            <div class="stat-value" style="color:{% if overall_fulfillment >= 90 %}#16a34a{% elif overall_fulfillment >= 70 %}#d97706{% else %}#ef4444{% endif %};">{{ overall_fulfillment }}%</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Total Outstanding</div>
+            <div class="stat-value" style="color:#ef4444;">PKR {{ total_outstanding|floatformat:0 }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search -->
+<div style="background:white;border-radius:12px;padding:12px 16px;border:1px solid var(--border);margin-bottom:18px;">
+    <input type="text" id="makerSearch" placeholder="🔍 Search maker..." class="form-control" oninput="filterMakers()" style="max-width:300px;">
+</div>
+
+<!-- Maker Cards -->
+<div id="makerCards">
+{% for m in makers %}
+<div class="maker-card" data-name="{{ m.name|lower }}">
+    <div style="display:flex; gap:16px; align-items:flex-start;">
+        <!-- Grade -->
+        <div class="grade" style="background:{{ m.perf_color }}20; color:{{ m.perf_color }};">{{ m.perf_grade }}</div>
+
+        <!-- Main Info -->
+        <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                <div>
+                    <div style="font-size:16px; font-weight:800; color:#1e293b;">🏭 {{ m.name }}</div>
+                    <div style="font-size:12px; color:#64748b;">
+                        {% if m.mobile %}📞 {{ m.mobile }}{% endif %}
+                        {% if m.email %} · 📧 {{ m.email }}{% endif %}
+                    </div>
+                </div>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                    <a href="/dashboard/makers/ledger/{{ m.name|urlencode }}/" style="background:#e0f2fe;color:#0284c7;border-radius:8px;padding:5px 12px;font-weight:700;font-size:12px;text-decoration:none;">📒 Ledger</a>
+                    <a href="/dashboard/purchase-orders/?q={{ m.name|urlencode }}" style="background:#fff0f3;color:#a91b2e;border-radius:8px;padding:5px 12px;font-weight:700;font-size:12px;text-decoration:none;">📋 POs</a>
+                </div>
+            </div>
+
+            <!-- Fulfillment Bar -->
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                    <span style="font-weight:700; color:#64748b;">Fulfillment Rate</span>
+                    <span style="font-weight:800; color:{{ m.perf_color }};">{{ m.fulfillment_pct }}%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" style="width:{{ m.fulfillment_pct }}%; background:{{ m.perf_color }};"></div>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div class="metric-box">
+                    <div class="val" style="color:#0284c7;">{{ m.po_count }}</div>
+                    <div class="lbl">POs</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:#64748b;">{{ m.total_ordered }}</div>
+                    <div class="lbl">Ordered</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:#16a34a;">{{ m.total_received }}</div>
+                    <div class="lbl">Received</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:#ef4444;">{{ m.pending }}</div>
+                    <div class="lbl">Pending</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:#d97706;">{{ m.partial }}</div>
+                    <div class="lbl">Partial</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:#6b0f1a;">{{ m.items }}</div>
+                    <div class="lbl">SKUs</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:#64748b;">{{ m.total_stock }}</div>
+                    <div class="lbl">In Stock</div>
+                </div>
+                <div class="metric-box">
+                    <div class="val" style="color:{% if m.balance > 0 %}#ef4444{% else %}#16a34a{% endif %};">
+                        {% if m.balance > 0 %}PKR {{ m.balance|floatformat:0 }}{% else %}—{% endif %}
+                    </div>
+                    <div class="lbl">Balance Due</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="text-center text-muted py-4">No makers found</div>
+{% endfor %}
+</div>
+
+<script>
+function filterMakers() {
+    const q = document.getElementById('makerSearch').value.toLowerCase();
+    document.querySelectorAll('.maker-card').forEach(card => {
+        card.style.display = card.dataset.name.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+@media print {
+    .sidebar, .page-header, .filter-bar, .maker-summary, button, .btn, form, select { display: none !important; }
+    .main-content { margin-left: 0 !important; padding: 8px !important; }
+    .stat-card { border:1px solid #ccc !important; box-shadow:none !important; }
+    .rpt-tbl th { background:#1e293b !important; color:white !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .rpt-tbl td { font-size:10px !important; padding:4px 6px !important; }
+}
+:root { --maroon:#a91b2e; --border:#e2e8f0; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; padding:22px 28px; border-radius:14px; margin-bottom:22px; box-shadow:0 8px 24px rgba(107,15,26,0.3); display:flex; align-items:center; gap:16px; }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.stat-card { background:white; border-radius:12px; padding:18px 22px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+.stat-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.stat-value { font-size:22px; font-weight:800; margin-top:4px; }
+.rpt-tbl th { background:#1e293b; color:white; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:10px 12px; white-space:nowrap; cursor:pointer; }
+.rpt-tbl th:hover { background:#334155; }
+.rpt-tbl td { padding:8px 12px; font-size:12px; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
+.rpt-tbl tr:hover { background:#f8fafc; }
+.filter-bar { background:white; border-radius:12px; padding:14px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid var(--border); margin-bottom:18px; }
+.maker-summary { background:white; border-radius:12px; padding:18px; border:1px solid var(--border); margin-bottom:18px; }
+.maker-bar { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.maker-bar-label { width:140px; font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.maker-bar-track { flex:1; background:#f1f5f9; border-radius:6px; height:10px; }
+.maker-bar-fill { background:linear-gradient(90deg,#6b0f1a,#a91b2e); border-radius:6px; height:10px; }
+.maker-bar-value { width:100px; text-align:right; font-size:12px; font-weight:700; color:#a91b2e; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h2>💰 Inventory Valuation Report</h2>
+        <p>Stock value, selling value and potential profit by item and maker</p>
+    </div>
+    <button onclick="window.print()" class="btn-new ms-auto" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:10px;padding:9px 20px;font-weight:700;">🖨️ Print</button>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Stock Cost Value</div>
+            <div class="stat-value" style="color:#ef4444;">PKR {{ total_stock_value|floatformat:0 }}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">What you paid</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Stock Sell Value</div>
+            <div class="stat-value" style="color:#0284c7;">PKR {{ total_sell_value|floatformat:0 }}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">If sold at list price</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Potential Profit</div>
+            <div class="stat-value" style="color:#16a34a;">PKR {{ total_potential_profit|floatformat:0 }}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Sell value minus cost</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Total SKUs</div>
+            <div class="stat-value" style="color:#6b0f1a;">{{ total_items }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Total Units</div>
+            <div class="stat-value" style="color:#64748b;">{{ total_units }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card">
+            <div class="stat-label">Avg Margin</div>
+            <div class="stat-value" style="color:#d97706;">
+                {% if total_sell_value > 0 %}{{ total_potential_profit|floatformat:0 }}{% else %}0{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maker Summary -->
+<div class="maker-summary">
+    <div style="font-size:13px; font-weight:800; color:#1e293b; margin-bottom:14px;">🏭 Stock Value by Maker</div>
+    {% for maker, stats in maker_summary %}
+    <div class="maker-bar">
+        <div class="maker-bar-label" title="{{ maker }}">{{ maker }}</div>
+        <div class="maker-bar-track">
+            <div class="maker-bar-fill" style="width:{% if total_stock_value > 0 %}{% widthratio stats.stock_value total_stock_value 100 %}{% else %}0{% endif %}%;"></div>
+        </div>
+        <div class="maker-bar-value">PKR {{ stats.stock_value|floatformat:0 }}</div>
+        <div style="width:60px;text-align:right;font-size:11px;color:#64748b;">{{ stats.items }} SKUs</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <form class="d-flex gap-2 flex-wrap align-items-end" method="get">
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Maker</label>
+            <select name="maker" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
+                <option value="">All Makers</option>
+                {% for m in all_makers %}
+                <option value="{{ m }}" {% if m == maker_filter %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Sort By</label>
+            <select name="sort" class="form-select form-select-sm" style="width:180px;" onchange="this.form.submit()">
+                <option value="value" {% if sort == "value" %}selected{% endif %}>Stock Value (High→Low)</option>
+                <option value="profit" {% if sort == "profit" %}selected{% endif %}>Potential Profit</option>
+                <option value="stock" {% if sort == "stock" %}selected{% endif %}>Stock Qty</option>
+                <option value="margin" {% if sort == "margin" %}selected{% endif %}>Margin %</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Show</label>
+            <select id="showFilter" class="form-select form-select-sm" style="width:160px;" onchange="filterRows()">
+                <option value="all">All Items</option>
+                <option value="instock">In Stock Only</option>
+                <option value="reorder">Needs Reorder</option>
+                <option value="zero">Zero Stock</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- Table -->
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); overflow-x:auto;">
+    <table class="table mb-0 rpt-tbl" id="valTable">
+        <thead>
+            <tr>
+                <th>SKU</th><th>Title</th><th>Maker</th>
+                <th class="text-center">Stock</th>
+                <th class="text-center">Sell Price</th>
+                <th class="text-center">Cost Price</th>
+                <th class="text-center">Margin %</th>
+                <th class="text-center" style="background:#1a2540;">Stock Cost Value</th>
+                <th class="text-center" style="background:#1a2540;">Stock Sell Value</th>
+                <th class="text-center" style="background:#1a2540;">Potential Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+        <tr data-stock="{{ item.stock }}" data-reorder="{% if item.needs_reorder %}1{% else %}0{% endif %}">
+            <td><code>{{ item.sku }}</code></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ item.title }}">{{ item.title }}</td>
+            <td style="font-size:11px;color:#64748b;">{{ item.maker }}</td>
+            <td class="text-center {% if item.needs_reorder %}text-danger fw-bold{% elif item.stock == 0 %}text-muted{% endif %}">{{ item.stock }}</td>
+            <td class="text-center">{{ item.price|floatformat:0 }}</td>
+            <td class="text-center text-muted">{{ item.cost|floatformat:0 }}</td>
+            <td class="text-center">
+                {% if item.margin > 30 %}<span style="color:#16a34a;font-weight:700;">{{ item.margin|floatformat:1 }}%</span>
+                {% elif item.margin > 0 %}<span style="color:#d97706;font-weight:700;">{{ item.margin|floatformat:1 }}%</span>
+                {% else %}<span style="color:#94a3b8;">—</span>{% endif %}
+            </td>
+            <td class="text-center fw-bold" style="color:#ef4444;">{{ item.stock_value|floatformat:0 }}</td>
+            <td class="text-center fw-bold" style="color:#0284c7;">{{ item.sell_value|floatformat:0 }}</td>
+            <td class="text-center fw-bold" style="color:#16a34a;">{{ item.potential_profit|floatformat:0 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="text-center text-muted py-4">No data found</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function filterRows() {
+    const f = document.getElementById('showFilter').value;
+    document.querySelectorAll('#valTable tbody tr').forEach(tr => {
+        const stock = parseInt(tr.dataset.stock);
+        const reorder = tr.dataset.reorder === '1';
+        if (f === 'all') tr.style.display = '';
+        else if (f === 'instock') tr.style.display = stock > 0 ? '' : 'none';
+        else if (f === 'reorder') tr.style.display = reorder ? '' : 'none';
+        else if (f === 'zero') tr.style.display = stock === 0 ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+@media print {
+    .sidebar, .page-header, .filter-bar, button, .btn, form { display:none !important; }
+    .main-content { margin-left:0 !important; padding:8px !important; }
+    .rpt-tbl th { background:#1e293b !important; color:white !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .rpt-tbl td { font-size:10px !important; padding:4px 6px !important; }
+}
+:root { --maroon:#a91b2e; --border:#e2e8f0; }
+.page-header { background:linear-gradient(135deg,#6b0f1a,#a91b2e); color:white; padding:22px 28px; border-radius:14px; margin-bottom:22px; box-shadow:0 8px 24px rgba(107,15,26,0.3); display:flex; align-items:center; gap:16px; }
+.page-header h2 { margin:0; font-size:22px; font-weight:800; }
+.stat-card { background:white; border-radius:12px; padding:18px 22px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+.stat-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.stat-value { font-size:24px; font-weight:800; margin-top:4px; }
+.rpt-tbl th { background:#1e293b; color:white; font-size:11px; text-transform:uppercase; padding:10px 12px; white-space:nowrap; }
+.rpt-tbl td { padding:8px 12px; font-size:12px; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
+.rpt-tbl tr:hover { background:#f8fafc; }
+.filter-bar { background:white; border-radius:12px; padding:14px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid var(--border); margin-bottom:18px; }
+.badge-increase { background:#dcfce7; color:#16a34a; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.badge-decrease { background:#fef3c7; color:#d97706; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.badge-ok { background:#f1f5f9; color:#64748b; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.reorder-input { width:70px; border:2px solid #e2e8f0; border-radius:6px; padding:3px 6px; text-align:center; font-weight:700; font-size:13px; }
+.reorder-input:focus { border-color:#a91b2e; outline:none; }
+.reorder-input.changed { border-color:#16a34a; background:#f0fdf4; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h2>🎯 Reorder Point Suggestions</h2>
+        <p>AI-suggested reorder points based on sales velocity</p>
+    </div>
+    <button onclick="applyAll()" class="btn-new" style="background:rgba(255,255,255,0.9);color:#a91b2e;border:none;border-radius:10px;padding:9px 20px;font-weight:700;">✅ Apply All Suggestions</button>
+    <button onclick="saveChanges()" id="saveBtn" class="btn-new ms-2" style="background:#16a34a;color:white;border:none;border-radius:10px;padding:9px 20px;font-weight:700;display:none;">💾 Save Changes</button>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Should Increase</div>
+            <div class="stat-value" style="color:#16a34a;">{{ increases }}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Reorder point too low</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Should Decrease</div>
+            <div class="stat-value" style="color:#d97706;">{{ decreases }}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Reorder point too high</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Already Optimal</div>
+            <div class="stat-value" style="color:#64748b;">{{ no_change }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Lead Time Used</div>
+            <div class="stat-value" style="color:#6b0f1a;">{{ lead_days }} days</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Supplier delivery time</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <form class="d-flex gap-2 flex-wrap align-items-end" method="get">
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Maker</label>
+            <select name="maker" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
+                <option value="">All Makers</option>
+                {% for m in all_makers %}
+                <option value="{{ m }}" {% if m == maker_filter %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Lead Time (days)</label>
+            <select name="lead" class="form-select form-select-sm" style="width:150px;" onchange="this.form.submit()">
+                <option value="14" {% if lead_days == 14 %}selected{% endif %}>14 days</option>
+                <option value="21" {% if lead_days == 21 %}selected{% endif %}>21 days</option>
+                <option value="30" {% if lead_days == 30 %}selected{% endif %}>30 days</option>
+                <option value="45" {% if lead_days == 45 %}selected{% endif %}>45 days</option>
+                <option value="60" {% if lead_days == 60 %}selected{% endif %}>60 days</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label fw-bold small text-uppercase" style="color:#64748b;">Show</label>
+            <select id="showFilter" class="form-select form-select-sm" style="width:180px;" onchange="filterRows()">
+                <option value="all">All Items</option>
+                <option value="increase">Should Increase</option>
+                <option value="decrease">Should Decrease</option>
+                <option value="ok">Already Optimal</option>
+                <option value="nosales">No Sales Data</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- Table -->
+<div style="background:white; border-radius:12px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); overflow-x:auto;">
+    <table class="table mb-0 rpt-tbl" id="rptTable">
+        <thead>
+            <tr>
+                <th>SKU</th><th>Title</th><th>Maker</th>
+                <th class="text-center">Stock</th>
+                <th class="text-center" style="background:#fef3c7;color:#1e293b;">30d Sales</th>
+                <th class="text-center" style="background:#fde68a;color:#1e293b;">60d Sales</th>
+                <th class="text-center" style="background:#fcd34d;color:#1e293b;">90d Sales</th>
+                <th class="text-center">Daily Rate</th>
+                <th class="text-center">Current Reorder</th>
+                <th class="text-center" style="background:#dcfce7;color:#1e293b;">Suggested</th>
+                <th class="text-center">New Reorder</th>
+                <th class="text-center">Change</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+        <tr data-change="{{ item.change }}" data-sales="{{ item.s90 }}" data-sku="{{ item.sku }}">
+            <td><code>{{ item.sku }}</code></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ item.title }}">{{ item.title }}</td>
+            <td style="font-size:11px;color:#64748b;">{{ item.maker }}</td>
+            <td class="text-center fw-bold">{{ item.stock }}</td>
+            <td class="text-center" style="background:#fefce8;">{{ item.s30 }}</td>
+            <td class="text-center" style="background:#fef9c3;">{{ item.s60 }}</td>
+            <td class="text-center" style="background:#fef08a;">{{ item.s90 }}</td>
+            <td class="text-center text-muted">{{ item.daily_rate }}</td>
+            <td class="text-center fw-bold">{{ item.current_reorder }}</td>
+            <td class="text-center fw-bold" style="color:#16a34a;">{{ item.suggested }}</td>
+            <td class="text-center">
+                <input type="number" min="0" value="{{ item.suggested }}"
+                    class="reorder-input" id="inp_{{ item.sku }}"
+                    data-original="{{ item.current_reorder }}"
+                    data-suggested="{{ item.suggested }}"
+                    oninput="markChanged(this, '{{ item.sku }}')">
+            </td>
+            <td class="text-center">
+                {% if item.change == 'increase' %}<span class="badge-increase">⬆ +{{ item.diff }}</span>
+                {% elif item.change == 'decrease' %}<span class="badge-decrease">⬇ {{ item.diff }}</span>
+                {% else %}<span class="badge-ok">✓ No change</span>{% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" class="text-center text-muted py-4">No data found</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+let pendingChanges = {};
+
+function markChanged(inp, sku) {
+    const original = parseInt(inp.dataset.original);
+    const val = parseInt(inp.value) || 0;
+    if (val !== original) {
+        inp.classList.add('changed');
+        pendingChanges[sku] = val;
+    } else {
+        inp.classList.remove('changed');
+        delete pendingChanges[sku];
+    }
+    document.getElementById('saveBtn').style.display = Object.keys(pendingChanges).length > 0 ? 'inline-block' : 'none';
+}
+
+function applyAll() {
+    document.querySelectorAll('.reorder-input').forEach(inp => {
+        const suggested = parseInt(inp.dataset.suggested);
+        const original = parseInt(inp.dataset.original);
+        inp.value = suggested;
+        const sku = inp.id.replace('inp_', '');
+        if (suggested !== original) {
+            inp.classList.add('changed');
+            pendingChanges[sku] = suggested;
+        }
+    });
+    document.getElementById('saveBtn').style.display = Object.keys(pendingChanges).length > 0 ? 'inline-block' : 'none';
+}
+
+function saveChanges() {
+    if (!Object.keys(pendingChanges).length) { alert('No changes to save'); return; }
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = '⏳ Saving...';
+    const updates = Object.entries(pendingChanges).map(([sku, reorder]) => ({sku, reorder}));
+    fetch('/dashboard/reports/reorder-suggestions/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({updates})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Updated ' + data.updated + ' reorder points!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown'));
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+    })
+    .catch(() => { alert('Network error'); btn.disabled = false; btn.textContent = '💾 Save Changes'; });
+}
+
+function filterRows() {
+    const f = document.getElementById('showFilter').value;
+    document.querySelectorAll('#rptTable tbody tr').forEach(tr => {
+        const change = tr.dataset.change;
+        const sales = parseInt(tr.dataset.sales);
+        if (f === 'all') tr.style.display = '';
+        else if (f === 'increase') tr.style.display = change === 'increase' ? '' : 'none';
+        else if (f === 'decrease') tr.style.display = change === 'decrease' ? '' : 'none';
+        else if (f === 'ok') tr.style.display = change === 'ok' ? '' : 'none';
+        else if (f === 'nosales') tr.style.display = sales === 0 ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}
