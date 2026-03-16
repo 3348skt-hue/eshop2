@@ -2181,7 +2181,7 @@ def reorder_suggestions(request):
 def dashboard_logout(request):
     from django.contrib.auth import logout
     logout(request)
-    return redirect('/admin/login/?next=/dashboard/')
+    return redirect('/managermeriappka/login/?next=/dashboard/')
 
 # ============ SKU INFO ENDPOINT ============
 @staff_member_required
